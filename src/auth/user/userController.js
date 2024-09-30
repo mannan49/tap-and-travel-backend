@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { jwtDecode } from "jwt-decode";
 import User from './userModel.js';
 import config from '../../config/index.js';
 
@@ -35,7 +36,7 @@ const addUser = async (req, res, next) => {
     });
 
     const savedUser = await newUser.save();
-    const token = jwt.sign({ sub: savedUser._id }, config.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ sub: savedUser._id, role: "user", name: savedUser.name }, config.JWT_SECRET, { expiresIn: '7d' });
 
     return res.status(201).json({ user: savedUser, token });
   } catch (err) {
@@ -65,8 +66,10 @@ const loginUser = async (req, res, next) => {
       return next({ status: 401, message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ sub: user._id }, config.JWT_SECRET, { expiresIn: '7d' });
-    return res.status(200).json({ message: 'Login successful', token });
+    const token = jwt.sign({ sub: user._id, role: "user", name: user.name }, config.JWT_SECRET, { expiresIn: '7d' });
+    const decodedToken = jwtDecode(token);
+
+    return res.status(200).json({ message: `Welome ${(decodedToken.name).toUpperCase()} to dashboard!`, token });
   } catch (err) {
     return next({ status: 500, message: err.message });
   }

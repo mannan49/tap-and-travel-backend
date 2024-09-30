@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { jwtDecode } from "jwt-decode";
 import Admin from './adminModel.js';
 import config from '../../config/index.js';
 import { validationResult } from 'express-validator';
@@ -28,7 +29,7 @@ export const registerAdmin = async (req, res, next) => {
     const newAdmin = new Admin({ adminId, name, email, password, company });
     await newAdmin.save();
 
-    const token = jwt.sign({ sub: newAdmin._id }, config.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ sub: newAdmin._id, role: newAdmin.role, name: newAdmin.name }, config.JWT_SECRET, { expiresIn: '7d' });
 
     return res.status(201).json({
       admin: {
@@ -61,9 +62,9 @@ export const loginAdmin = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ sub: admin._id }, config.JWT_SECRET, { expiresIn: '7d' });
-
-    return res.status(200).json({ message: 'Login successful', token });
+    const token = jwt.sign({ sub: admin._id, role: admin.role, name: admin.name }, config.JWT_SECRET, { expiresIn: '7d' });
+    const decodedToken = jwtDecode(token);
+    return res.status(200).json({ message: `Welome ${(decodedToken.name).toUpperCase()} to dashboard!`, token });
   } catch (err) {
     return next({ status: 500, message: err.message });
   }
