@@ -91,3 +91,33 @@ export const updateBus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+// Get buses by adminId or email
+export const getBusesByAdminId = async (req, res) => {
+  const { adminId, email } = req.query; // Use query parameters for adminId or email
+
+  try {
+    let buses;
+    
+    // If an email is provided, first fetch the adminId
+    if (email) {
+      const admin = await Admin.findOne({ email }); // Assuming the email field is unique
+      if (!admin) {
+        return res.status(404).json({ message: 'Admin not found' });
+      }
+      buses = await Bus.find({ adminId: admin._id }); // Use the adminId from the found admin
+    } else if (adminId) {
+      // If adminId is provided directly, fetch buses using that
+      buses = await Bus.find({ adminId });
+    } else {
+      return res.status(400).json({ message: 'Either adminId or email must be provided' });
+    }
+
+    res.status(200).json(buses);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
