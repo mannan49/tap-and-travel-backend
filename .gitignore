@@ -1,37 +1,11 @@
-# Node modules
+# Ignore node_modules
 node_modules/
 
-# Logs
-logs
-*.log
-npm-debug.log*
-
-# Environment variables
+# Ignore environment variable files
 .env
 
-# Build output
-dist/
-build/
+# Ignore log files
+*.log
 
-# Temporary files
-*.tmp
-*.temp
-
-# IDE and editor specific files
+# Ignore other sensitive or temporary files
 .DS_Store
-*.sublime-project
-*.sublime-workspace
-.vscode/
-.idea/
-
-# Operating system files
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# Coverage directory used by tools like istanbul
-coverage/
-
-# Other
-*.tgz
