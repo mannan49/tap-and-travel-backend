@@ -1,5 +1,5 @@
 import express from 'express';
-import { addBus, getBuses, getBusById, deleteBus, updateBus } from './busController.js';
+import { addBus, getBuses, getBusById, deleteBus, updateBus, getBusesByAdminId } from './busController.js';
 import { busValidationRules } from './validation.js'; 
 import { validate } from '../middlewares/validate.js';
 
@@ -9,6 +9,8 @@ const busRouter = express.Router();
 busRouter.route('/')
   .post(busValidationRules(), validate, addBus)  // Add new bus (Admin access only)
   .get(getBuses); // Get all buses (Public)
+
+busRouter.get('/ad-bus', getBusesByAdminId);
 
 busRouter.route('/:id')
   .get(getBusById) // Get a specific bus by ID (Public)
