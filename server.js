@@ -12,6 +12,7 @@ import connectDB from "./src/config/connectDB.js";
 import adminRouter from "./src/auth/admin/adminRouter.js";
 import busRouter from "./src/bus/busRouter.js";
 import ticketRouter from "./src/ticket/ticketRouter.js";
+import router from "./src/routes/routeRouter.js";
 
 dotenv.config();
 const app = express();
@@ -36,6 +37,7 @@ app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/bus", busRouter);
 app.use("/api/v1/ticket", ticketRouter);
+app.use("/api/v1/route", router);
 
 // Welcome route
 app.get("/", (req, res) => {

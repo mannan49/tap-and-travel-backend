@@ -57,7 +57,7 @@ const BusDetailsSchema = new mongoose.Schema(
     standard: {
       type: String,
       default: "executive",
-      enum: ["executive", "business"],
+      enum: ["economy", "executive", "business"],
     },
   },
   { _id: false } // Prevent adding _id for bus details
