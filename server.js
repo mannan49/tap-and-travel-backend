@@ -2,8 +2,10 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import globalErrorHandler from "./src/middlewares/globalErrorHandler.js";
+import http from "http";
 import swaggerUi from "swagger-ui-express";
 import open from "open";
+import { initializeWebSocket } from "./webSocket.js";
 // import swaggerFile from "./swagger-output.json" assert { type: "json" };
 
 // Importing routes
@@ -12,6 +14,7 @@ import connectDB from "./src/config/connectDB.js";
 import adminRouter from "./src/auth/admin/adminRouter.js";
 import busRouter from "./src/bus/busRouter.js";
 import ticketRouter from "./src/ticket/ticketRouter.js";
+import locationRouter from "./src/location/locationRouter.js";
 import router from "./src/routes/routeRouter.js";
 
 dotenv.config();
@@ -37,6 +40,7 @@ app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/bus", busRouter);
 app.use("/api/v1/ticket", ticketRouter);
+app.use("/api/v1/location", locationRouter);
 app.use("/api/v1/route", router);
 
 // Welcome route
@@ -47,8 +51,12 @@ app.get("/", (req, res) => {
 // Global error handler
 app.use(globalErrorHandler);
 
+const server = http.createServer(app);
+
+// Initialize WebSocket
+initializeWebSocket(server);
+
 // Start server
-const server = app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running at ${port}`);
-  // open(`http://localhost:${port}/api-docs`);
 });

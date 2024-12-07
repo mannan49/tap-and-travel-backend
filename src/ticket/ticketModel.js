@@ -17,9 +17,9 @@ const TicketSchema = new mongoose.Schema({
     required: true,
   },
   seatNumber: {
-    type: Number,
+    type: String,
     required: true,
-    min: 1, 
+    min: 1,
   },
   fare: {
     type: Number,

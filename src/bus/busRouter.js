@@ -1,18 +1,30 @@
-import express from 'express';
-import { addBus, getBuses, getBusById, deleteBus, updateBus, getBusesByAdminId } from './busController.js';
-import { busValidationRules } from './validation.js'; 
-import { validate } from '../middlewares/validate.js';
+import express from "express";
+import {
+  addBus,
+  getBuses,
+  getBusById,
+  deleteBus,
+  updateBus,
+  getBusesByAdminId,
+  updateSeatStatusOfBus,
+} from "./busController.js";
+import { busValidationRules } from "./validation.js";
+import { validate } from "../middlewares/validate.js";
 
 const busRouter = express.Router();
 
 // Routes for bus management
-busRouter.route('/')
-  .post(busValidationRules(), validate, addBus)  // Add new bus (Admin access only)
+busRouter
+  .route("/")
+  .post(busValidationRules(), validate, addBus) // Add new bus (Admin access only)
   .get(getBuses); // Get all buses (Public)
 
-busRouter.get('/ad-bus', getBusesByAdminId);
+busRouter.get("/ad-bus", getBusesByAdminId);
 
-busRouter.route('/:id')
+busRouter.patch('/update-seat-status', updateSeatStatusOfBus);
+
+busRouter
+  .route("/:id")
   .get(getBusById) // Get a specific bus by ID (Public)
   .delete(deleteBus) // Delete a bus by ID (Admin access only)
   .put(busValidationRules(), validate, updateBus); // Update a bus by ID (Admin access only)

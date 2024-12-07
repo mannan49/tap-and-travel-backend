@@ -83,7 +83,7 @@ export const getBuses = async (req, res) => {
 
 // Get single bus by ID
 export const getBusById = async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params || req.body;
 
   try {
     const bus = await Bus.findById(id);
@@ -150,7 +150,48 @@ export const updateBus = async (req, res) => {
   }
 };
 
+export const updateSeatStatusOfBus = async (req, res) => {
+  const { busId, seatNumber, booked, email, gender } = req.body;
 
+  try {
+    // Find the bus by its ID
+    const bus = await Bus.findOne({ busId });
+
+    if (!bus) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    // Find the seat to update
+    const seat = bus.seats.find((s) => s.seatNumber === seatNumber);
+
+    if (!seat) {
+      return res.status(404).json({ message: "Seat not found" });
+    }
+
+    // Update the seat's details
+    seat.booked = booked ?? true; // Defaults to true if not provided
+    seat.email = email || seat.email; // Updates email if provided
+    seat.gender = gender || seat.gender; // Updates gender if provided
+
+    // Update the neighbor seat's neighborGender
+    if (seat.neighborSeatNumber !== null) {
+      const neighborSeatIndex = parseInt(seat.neighborSeatNumber, 10); // Get the neighbor seat's index
+      const neighborSeat = bus.seats[neighborSeatIndex]; // Access the neighbor seat object
+
+      if (neighborSeat) {
+        neighborSeat.neighborGender = gender || neighborSeat.neighborGender; // Update neighbor's neighborGender
+      }
+    }
+
+    // Save the updated bus document
+    await bus.save();
+
+    res.status(200).json({ message: "Seat status updated successfully", seat });
+  } catch (error) {
+    console.error("Error updating seat status:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // Get buses by adminId or email
 export const getBusesByAdminId = async (req, res) => {
@@ -158,19 +199,21 @@ export const getBusesByAdminId = async (req, res) => {
 
   try {
     let buses;
-    
+
     // If an email is provided, first fetch the adminId
     if (email) {
       const admin = await Admin.findOne({ email }); // Assuming the email field is unique
       if (!admin) {
-        return res.status(404).json({ message: 'Admin not found' });
+        return res.status(404).json({ message: "Admin not found" });
       }
       buses = await Bus.find({ adminId: admin._id }); // Use the adminId from the found admin
     } else if (adminId) {
       // If adminId is provided directly, fetch buses using that
       buses = await Bus.find({ adminId });
     } else {
-      return res.status(400).json({ message: 'Either adminId or email must be provided' });
+      return res
+        .status(400)
+        .json({ message: "Either adminId or email must be provided" });
     }
 
     res.status(200).json(buses);
@@ -178,4 +221,3 @@ export const getBusesByAdminId = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
