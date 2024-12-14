@@ -42,6 +42,10 @@ const TicketSchema = new mongoose.Schema({
     enum: ["booked", "cancelled"],
     default: "booked",
   },
+  ticketId: {
+    type: String,
+    unique: true,
+  },
 });
 
 const Ticket = mongoose.model("Ticket", TicketSchema);

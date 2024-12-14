@@ -23,6 +23,12 @@ export const addBus = async (req, res) => {
   } = req.body;
 
   try {
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found." });
+    }
+
+    const adminName = admin.name;
     const createSeats = (busCapacity) => {
       return Array.from({ length: busCapacity }, (v, i) => {
         const seatNumber = generateComplexSeatNumber(i);
@@ -50,6 +56,7 @@ export const addBus = async (req, res) => {
     const bus = new Bus({
       busId,
       adminId,
+      adminName,
       route,
       departureTime,
       arrivalTime,
@@ -59,6 +66,8 @@ export const addBus = async (req, res) => {
       seats,
       fare,
     });
+
+    
 
     const createdBus = await bus.save();
     console.log("Bus created successfully:", createdBus);

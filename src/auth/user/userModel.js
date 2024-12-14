@@ -28,7 +28,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  RFIDCardNumber: String,
+  RFIDCardNumber: {
+    type: String,
+    required: true,
+  },
   travelHistory: Array,
   paymentInformation: Object,
 });

@@ -1,5 +1,12 @@
 import express from "express";
-import { addUser, getAllUsers, loginUser } from "./userController.js";
+import {
+  addRfidCardNumber,
+  addUser,
+  deleteRfidCardNumber,
+  getAllUsers,
+  getRfidCardNumber,
+  loginUser,
+} from "./userController.js";
 import { userValidationRules, loginValidationRules } from "./validation.js";
 import { resendOTP, verifyOTP } from "../otp/OTPVerificationController.js";
 
@@ -11,5 +18,9 @@ userRouter.post("/login", loginValidationRules(), loginUser);
 
 userRouter.post("/verify-otp", verifyOTP);
 userRouter.post("/resend-otp", resendOTP);
+
+userRouter.post("/rfid-add", addRfidCardNumber);
+userRouter.get("/rfid-get", getRfidCardNumber);
+userRouter.post("/rfid-delete", deleteRfidCardNumber);
 
 export default userRouter;

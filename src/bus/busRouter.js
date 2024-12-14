@@ -10,23 +10,20 @@ import {
 } from "./busController.js";
 import { busValidationRules } from "./validation.js";
 import { validate } from "../middlewares/validate.js";
+import { authenticate } from "../middlewares/authenticate.js";
 
 const busRouter = express.Router();
 
-// Routes for bus management
-busRouter
-  .route("/")
-  .post(busValidationRules(), validate, addBus) // Add new bus (Admin access only)
-  .get(getBuses); // Get all buses (Public)
+busRouter.route("/").post(busValidationRules(), validate, addBus).get(getBuses);
 
 busRouter.get("/ad-bus", getBusesByAdminId);
 
-busRouter.patch('/update-seat-status', updateSeatStatusOfBus);
+busRouter.patch("/update-seat-status", updateSeatStatusOfBus);
 
 busRouter
   .route("/:id")
-  .get(getBusById) // Get a specific bus by ID (Public)
-  .delete(deleteBus) // Delete a bus by ID (Admin access only)
-  .put(busValidationRules(), validate, updateBus); // Update a bus by ID (Admin access only)
+  .get(getBusById)
+  .delete(authenticate, deleteBus)
+  .put(busValidationRules(), validate, updateBus);
 
 export default busRouter;

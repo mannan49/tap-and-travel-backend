@@ -10,10 +10,12 @@ import { authenticate } from "../middlewares/authenticate.js";
 const ticketRouter = express.Router();
 
 // Generate ticket (Authenticated users)
-ticketRouter.post("/generate", authenticate, generateTicket);
+ticketRouter.post("/generate", generateTicket);
 
 // Get all tickets for a user (Authenticated users)
-ticketRouter.get("/user/:userId", authenticate, getTicketsForUser);
+ticketRouter.get("/user/:userId", getTicketsForUser);
+ticketRouter.post("/user/information", getTicketInformation);
+
 ticketRouter.get(
   "/user/information/:userId",
   authenticate,

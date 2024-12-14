@@ -132,6 +132,10 @@ const BusSchema = new mongoose.Schema(
       ref: "Admin",
       required: [true, "Admin ID is required."],
     },
+    adminName: {
+      type: String,
+      required: [true, "Admin Name is required."],
+    },
     route: RouteSchema,
     departureTime: {
       type: String,

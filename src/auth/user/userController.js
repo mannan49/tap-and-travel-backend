@@ -73,28 +73,27 @@ const addUser = async (req, res, next) => {
 };
 
 const loginUser = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return next({
-      status: 400,
-      message: errors
-        .array()
-        .map((err) => err.msg)
-        .join(", "),
-    });
-  }
-
-  const { email, password } = req.body;
-
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return next({ status: 401, message: "Invalid credentials" });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return next({ status: 401, message: "Invalid credentials" });
+    const { email, password, RFIDCardNumber } = req.body;
+    let user;
+    if (RFIDCardNumber) {
+      if (typeof RFIDCardNumber !== "string") {
+        return res.status(400).json({ message: "RFID Card Not found" });
+      }
+      user = await User.findOne({ RFIDCardNumber: String(RFIDCardNumber) });
+      if (!user) {
+        return next({ status: 401, message: "Invalid RFID Card Number" });
+      }
+    } else if (email && password) {
+      // Check if login is via email and password
+      user = await User.findOne({ email });
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return next({ status: 401, message: "Invalid credentials" });
+      }
+      if (!user) {
+        return next({ status: 401, message: "Invalid credentials" });
+      }
     }
 
     const token = jwt.sign(
@@ -102,10 +101,9 @@ const loginUser = async (req, res, next) => {
       config.JWT_SECRET,
       { expiresIn: "7d" }
     );
-    const decodedToken = jwtDecode(token);
 
     return res.status(200).json({
-      message: `Welcome ${decodedToken.name.toUpperCase()} to dashboard!`,
+      message: `Welcome ${user.name.toUpperCase()} to dashboard!`,
       token,
     });
   } catch (err) {
@@ -124,4 +122,102 @@ const getAllUsers = async (req, res, next) => {
   }
 };
 
-export { addUser, loginUser, getAllUsers };
+const addRfidCardNumber = async (req, res, next) => {
+  try {
+    const { email, RFIDCardNumber } = req.body;
+
+    // Validate the input
+    if (!email || !RFIDCardNumber) {
+      return res
+        .status(400)
+        .json({ message: "Email and RFIDCardNumber are required" });
+    }
+
+    // Check if the RFID card number already exists for another user
+    const existingUserWithRfid = await User.findOne({ RFIDCardNumber });
+    if (existingUserWithRfid) {
+      return res.status(400).json({ message: "Already Registered RFID Card" });
+    }
+
+    // Find the user by email and update the RFID card number
+    const user = await User.findOneAndUpdate(
+      { email },
+      { RFIDCardNumber },
+      { new: true } // Return the updated user
+    );
+
+    if (!user) {
+      return next({ status: 404, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "RFID card number updated successfully",
+      user,
+    });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+const deleteRfidCardNumber = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    // Validate the input
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Find the user by email and set the RFIDCardNumber to an empty string
+    const user = await User.findOneAndUpdate(
+      { email },
+      { RFIDCardNumber: "" },
+      { new: true } // Return the updated user
+    );
+
+    if (!user) {
+      return next({ status: 404, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "RFID card number deleted successfully",
+      user,
+    });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+const getRfidCardNumber = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    // Validate the input
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Find the user by email and return the RFIDCardNumber
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return next({ status: 404, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "RFID card number retrieved successfully",
+      RFIDCardNumber: user.RFIDCardNumber,
+    });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+export {
+  addUser,
+  loginUser,
+  getAllUsers,
+  addRfidCardNumber,
+  deleteRfidCardNumber,
+  getRfidCardNumber,
+};

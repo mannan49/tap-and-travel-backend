@@ -5,6 +5,8 @@ import {
   getAdminProfile,
   updateAdminProfile,
   getAllAdmins,
+  getCompaniesInforamtion,
+  getCompanyName,
 } from "./adminController.js";
 import { authenticate, isSuperAdmin } from "../../middlewares/authenticate.js";
 import {
@@ -14,7 +16,8 @@ import {
 const adminRouter = express.Router();
 
 // Public routes
-// adminRouter.post("/register", registerAdmin);
+adminRouter.get("/companies-information", getCompaniesInforamtion);
+adminRouter.get("/company-name", getCompanyName);
 adminRouter.post("/register", registerAdmin);
 adminRouter.post("/login", loginValidationRules(), loginAdmin);
 
@@ -23,6 +26,6 @@ adminRouter.get("/profile", authenticate, getAdminProfile);
 adminRouter.put("/profile", authenticate, updateAdminProfile);
 
 // SuperAdmin only route
-adminRouter.get("/", authenticate, isSuperAdmin, getAllAdmins);
+adminRouter.get("/", authenticate, getAllAdmins);
 
 export default adminRouter;

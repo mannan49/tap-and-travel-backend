@@ -33,6 +33,9 @@ export const generateTicket = async (req, res, next) => {
       fare: bus.fare.actualPrice,
       travelDate: bus.date,
       adminId: bus.adminId,
+      ticketId: `TICKET-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 5)}`,
     });
 
     const savedTicket = await newTicket.save();
@@ -76,10 +79,24 @@ export const cancelTicket = async (req, res, next) => {
 
 export const getTicketInformation = async (req, res, next) => {
   const { userId } = req.params;
+  const { RFIDCardNumber } = req.body;
 
   try {
+    let userIdToFetch = userId;
+
+    // If RFIDCardNumber is provided, fetch the userId using it
+    if (RFIDCardNumber) {
+      const user = await User.findOne({ RFIDCardNumber });
+      if (!user) {
+        return res
+          .status(404)
+          .json({ message: "No user found with the provided RFIDCardNumber." });
+      }
+      userIdToFetch = user._id;
+    }
+
     // Fetch all tickets for the given userId
-    const tickets = await Ticket.find({ userId });
+    const tickets = await Ticket.find({ userId: userIdToFetch });
 
     if (!tickets || tickets.length === 0) {
       return res
@@ -99,6 +116,9 @@ export const getTicketInformation = async (req, res, next) => {
         }
 
         const ticketInformationObject = {
+          userId: user._id,
+          busId: bus._id,
+          adminId: admin._id,
           user: user.name,
           phoneNumber: user.phoneNumber,
           adminName: admin.company,
