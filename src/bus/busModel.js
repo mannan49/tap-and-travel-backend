@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import Route from "../routes/routeModel.js";
+import BusEntity from "../busEntity/busEntityModel.js";
 
 // Seat Schema
 const SeatSchema = new mongoose.Schema(
@@ -31,38 +33,6 @@ const SeatSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// Bus Details Schema
-const BusDetailsSchema = new mongoose.Schema(
-  {
-    busNumber: {
-      type: String,
-      required: true,
-    },
-    engineNumber: {
-      type: String,
-    },
-    wifi: {
-      type: Boolean,
-      default: false,
-    },
-    ac: {
-      type: Boolean,
-      default: false,
-    },
-    fuelType: {
-      type: String,
-      default: "diesel",
-      enum: ["diesel", "electric"],
-    },
-    standard: {
-      type: String,
-      default: "executive",
-      enum: ["economy", "executive", "business"],
-    },
-  },
-  { _id: false } // Prevent adding _id for bus details
-);
-
 // Fare Schema
 const FareSchema = new mongoose.Schema(
   {
@@ -78,65 +48,40 @@ const FareSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    paid: {
-      type: Boolean,
-      default: false,
-    },
-    paymentMedium: {
-      type: String,
-      default: "",
-    },
   },
-  { _id: false } // Prevent adding _id for fare
-);
-
-// Route Schema
-const RouteSchema = new mongoose.Schema(
-  {
-    startCity: {
-      type: String,
-      required: true,
-    },
-    endCity: {
-      type: String,
-      required: true,
-    },
-    stops: [
-      {
-        name: {
-          type: String,
-          required: true,
-        },
-        locationLink: {
-          type: String,
-        },
-        duration: {
-          type: Number,
-        },
-      },
-    ],
-  },
-  { _id: false } // Prevent adding _id for route
+  { _id: false }
 );
 
 // Bus Schema
 const BusSchema = new mongoose.Schema(
   {
-    busId: {
-      type: String,
-      unique: true,
-      required: true,
+    busEntityId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Bus-Entity",
+      required: [true, "Bus Entity Id is required."],
     },
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
       required: [true, "Admin ID is required."],
     },
+    driverId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      required: false,
+    },
+    routeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Route",
+      required: [true, "RouteId id required"],
+    },
+    route: {
+      type: Route.schema,
+    },
     adminName: {
       type: String,
       required: [true, "Admin Name is required."],
     },
-    route: RouteSchema,
     departureTime: {
       type: String,
       required: [true, "Departure time is required."],
@@ -153,12 +98,9 @@ const BusSchema = new mongoose.Schema(
         message: "Date must be greater than or equal to today.",
       },
     },
-    busCapacity: {
-      type: Number,
-      required: [true, "Bus capacity is required."],
-      min: [1, "Bus capacity must be at least 1."],
+    busDetails: {
+      type: BusEntity.schema,
     },
-    busDetails: BusDetailsSchema,
     seats: [SeatSchema],
     fare: FareSchema,
   },

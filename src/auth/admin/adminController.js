@@ -24,7 +24,7 @@ export const registerAdmin = async (req, res, next) => {
     });
   }
 
-  const { name, email, password, company } = req.body;
+  const { name, email, password, company , role, companyId } = req.body;
 
   try {
     const adminExists = await Admin.findOne({ email });
@@ -35,7 +35,15 @@ export const registerAdmin = async (req, res, next) => {
     }
 
     const adminId = await getNextAdminId();
-    const newAdmin = new Admin({ adminId, name, email, password, company });
+    const newAdmin = new Admin({
+      adminId,
+      name,
+      email,
+      password,
+      role: role || "admin",
+      company: role === "driver" ? null : company,
+      companyId: companyId || null,
+    });
     await newAdmin.save();
 
     const token = jwt.sign(
@@ -50,7 +58,6 @@ export const registerAdmin = async (req, res, next) => {
         adminId: newAdmin.adminId,
         name: newAdmin.name,
         email: newAdmin.email,
-        company: newAdmin.company,
         role: newAdmin.role,
       },
       token,

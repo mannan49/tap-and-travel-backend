@@ -1,9 +1,8 @@
+import Admin from "../auth/admin/adminModel.js";
+import BusEntity from "../busEntity/busEntityModel.js";
+import Route from "../routes/routeModel.js";
 import Bus from "./busModel.js";
 
-const generateBusId = () => {
-  // Generate a unique bus ID based on the current timestamp and a random number
-  return `BUS-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-};
 function generateComplexSeatNumber(baseNumber) {
   const timestampPart = Date.now().toString().slice(-8); // Last 8 digits of the timestamp
   const randomPart = Math.floor(1000 + Math.random() * 9000); // Random 4-digit number
@@ -12,13 +11,13 @@ function generateComplexSeatNumber(baseNumber) {
 
 export const addBus = async (req, res) => {
   const {
+    busEntityId,
     adminId,
-    route,
+    driverId,
+    routeId,
     departureTime,
     arrivalTime,
     date,
-    busCapacity,
-    busDetails,
     fare,
   } = req.body;
 
@@ -28,16 +27,23 @@ export const addBus = async (req, res) => {
       return res.status(404).json({ message: "Admin not found." });
     }
 
-    const adminName = admin.name;
+    const busEntity = await BusEntity.findById(busEntityId);
+    if (!busEntity) {
+      return res.status(404).json({ message: "Bus entity not found." });
+    }
+
+    const route = await Route.findById(routeId);
+    if (!route) {
+      return res.status(404).json({ message: "Route not found." });
+    }
+
+    const busCapacity = busEntity.busCapacity;
+
     const createSeats = (busCapacity) => {
       return Array.from({ length: busCapacity }, (v, i) => {
         const seatNumber = generateComplexSeatNumber(i);
         const neighborSeatNumber =
-          i % 2 === 0 && i + 1 < busCapacity
-            ? (i + 2).toString()
-            : i - 1 >= 0
-            ? i.toString()
-            : null;
+          i % 2 === 0 && i + 1 < busCapacity ? (i + 2).toString() : null;
 
         return {
           seatNumber,
@@ -51,27 +57,28 @@ export const addBus = async (req, res) => {
     };
 
     const seats = createSeats(busCapacity);
-    const busId = generateBusId();
 
     const bus = new Bus({
-      busId,
+      busEntityId,
       adminId,
-      adminName,
+      adminName: admin.name,
+      driverId,
+      routeId,
       route,
       departureTime,
       arrivalTime,
       date,
       busCapacity,
-      busDetails,
+      busDetails: busEntity,
       seats,
       fare,
     });
 
-    
-
     const createdBus = await bus.save();
-    console.log("Bus created successfully:", createdBus);
-    res.status(201).json(createdBus);
+    res.status(201).json({
+      message: "Bus has been added!",
+      id: createdBus._id,
+    });
   } catch (error) {
     console.error("Error creating bus:", error);
     res.status(400).json({ message: error.message });
@@ -82,7 +89,6 @@ export const addBus = async (req, res) => {
 export const getBuses = async (req, res) => {
   try {
     const buses = await Bus.find();
-    console.log("Retrieved buses:", buses);
     res.status(200).json(buses);
   } catch (error) {
     console.error("Error retrieving buses:", error);

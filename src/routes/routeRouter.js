@@ -1,14 +1,21 @@
-import express from 'express';
-import { createRoute, deleteRoute, getAllRoutes, getRouteById, updateRoute } from './routeController.js';
+import express from "express";
+import {
+  createRoute,
+  deleteRoute,
+  getAllRoutes,
+  getRouteById,
+  getRoutesByAdminId,
+  updateRoute,
+} from "./routeController.js";
 
-
-const router = express.Router();
+const routeRouter = express.Router();
 
 // Define routes
-router.get('/', getAllRoutes);
-router.get('/:id', getRouteById);
-router.post('/', createRoute); 
-router.put('/:id', updateRoute); 
-router.delete('/:id', deleteRoute); 
+routeRouter.get("/", getAllRoutes);
+routeRouter.get("/:id", getRouteById);
+routeRouter.post("/", createRoute);
+routeRouter.put("/:id", updateRoute);
+routeRouter.delete("/:id", deleteRoute);
+routeRouter.get("/:adminId", getRoutesByAdminId);
 
-export default router;
+export default routeRouter;

@@ -16,7 +16,9 @@ import adminRouter from "./src/auth/admin/adminRouter.js";
 import busRouter from "./src/bus/busRouter.js";
 import ticketRouter from "./src/ticket/ticketRouter.js";
 import locationRouter from "./src/location/locationRouter.js";
-import router from "./src/routes/routeRouter.js";
+import routeRouter from "./src/routes/routeRouter.js";
+import driverRouter from "./src/auth/driver/driverRouter.js";
+import busEntityRouter from "./src/busEntity/busEntityRouter.js";
 
 dotenv.config();
 const app = express();
@@ -27,10 +29,10 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-let scannedUID = '';
+let scannedUID = "";
 
-rl.on('line', (line) => {
-  scannedUID = line.trim(); 
+rl.on("line", (line) => {
+  scannedUID = line.trim();
   console.log(`Scanned UID: ${scannedUID}`);
 });
 
@@ -50,11 +52,13 @@ connectDB();
 
 // API routes
 app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/driver", driverRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/bus", busRouter);
 app.use("/api/v1/ticket", ticketRouter);
 app.use("/api/v1/location", locationRouter);
-app.use("/api/v1/route", router);
+app.use("/api/v1/route", routeRouter);
+app.use("/api/v1/bus-entity", busEntityRouter);
 
 // Welcome route
 app.get("/", (req, res) => {
@@ -66,14 +70,14 @@ app.use(globalErrorHandler);
 
 const server = http.createServer(app);
 
-app.post('/api/validate-rfid', (req, res) => {
+app.post("/api/validate-rfid", (req, res) => {
   const { uid } = req.body;
 
   // Validate the UID (you can replace this with database logic)
   if (uid === scannedUID) {
-    res.json({ status: 'success', message: 'Access Granted!' });
+    res.json({ status: "success", message: "Access Granted!" });
   } else {
-    res.json({ status: 'error', message: 'Invalid UID!' });
+    res.json({ status: "error", message: "Invalid UID!" });
   }
 });
 
