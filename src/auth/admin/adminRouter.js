@@ -7,11 +7,11 @@ import {
   getAllAdmins,
   getCompaniesInforamtion,
   getCompanyName,
+  getDriversByAdminId,
+  deleteDriver,
 } from "./adminController.js";
 import { authenticate, isSuperAdmin } from "../../middlewares/authenticate.js";
-import {
-  loginValidationRules,
-} from "../user/validation.js";
+import { loginValidationRules } from "../user/validation.js";
 
 const adminRouter = express.Router();
 
@@ -26,6 +26,8 @@ adminRouter.get("/profile", authenticate, getAdminProfile);
 adminRouter.put("/profile", authenticate, updateAdminProfile);
 
 // SuperAdmin only route
-adminRouter.get("/", authenticate, getAllAdmins);
+// adminRouter.get("/", authenticate, getAllAdmins);
+adminRouter.get("/", getDriversByAdminId);
+adminRouter.delete("/:id", deleteDriver);
 
 export default adminRouter;

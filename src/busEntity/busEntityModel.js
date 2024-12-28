@@ -9,6 +9,7 @@ const BusEntitySchema = new mongoose.Schema(
     },
     busNumber: {
       type: String,
+      unique: true,
       required: true,
     },
     busCapacity: {
@@ -17,6 +18,7 @@ const BusEntitySchema = new mongoose.Schema(
     },
     engineNumber: {
       type: String,
+      unique: true,
       required: true,
     },
     wifi: {

@@ -1,6 +1,5 @@
 import bcrypt from "bcryptjs";
 import { validationResult } from "express-validator";
-import Driver from "./driverModel.js";
 import Admin from "../admin/adminModel.js";
 
 
@@ -126,7 +125,7 @@ export const addDriver = [
 // Controller to get all drivers
 export const getAllDrivers = async (req, res, next) => {
   try {
-    const drivers = await Driver.find().populate("adminId", "name email");
+    const drivers = await Admin.find().populate("adminId", "name email");
     res
       .status(200)
       .json({ message: "Drivers fetched successfully", drivers });
@@ -137,12 +136,24 @@ export const getAllDrivers = async (req, res, next) => {
     });
   }
 };
+export const getDriversByAdminId = async (req, res) => {
+  const { adminId } = req.query;
+
+  try {
+    // Explicitly find by adminId
+    const buses = await Admin.find({ comapnyId: adminId });
+
+    res.status(200).json(buses);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 // Controller to get a driver by ID
 export const getDriverById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const driver = await Driver.findById(id).populate("adminId", "name email");
+    const driver = await Admin.findById(id).populate("adminId", "name email");
 
     if (!driver) {
       return res.status(404).json({ message: "Driver not found" });
@@ -176,7 +187,7 @@ export const updateDriver = async (req, res, next) => {
       updateData.password = await bcrypt.hash(updateData.password, 10);
     }
 
-    const updatedDriver = await Driver.findByIdAndUpdate(id, updateData, {
+    const updatedDriver = await Admin.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     });

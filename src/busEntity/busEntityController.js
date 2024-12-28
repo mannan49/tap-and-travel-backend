@@ -1,9 +1,20 @@
+import mongoose from "mongoose";
 import BusEntity from "./busEntityModel.js";
+import Admin from "../auth/admin/adminModel.js";
 
 // Create a new BusEntity
 export const createBusEntity = async (req, res) => {
   try {
-    const { adminId, busNumber, busCapacity, engineNumber, wifi, ac, fuelType, standard } = req.body;
+    const {
+      adminId,
+      busNumber,
+      busCapacity,
+      engineNumber,
+      wifi,
+      ac,
+      fuelType,
+      standard,
+    } = req.body;
 
     const newBusEntity = new BusEntity({
       adminId,
@@ -28,15 +39,17 @@ export const createBusEntity = async (req, res) => {
 };
 
 export const getBusEntitiesByAdminId = async (req, res) => {
+  const { adminId } = req.query;
+
   try {
-    const { adminId } = req.query;
-    const routes = await BusEntity.find({ adminId });
-    res.status(200).json(routes);
+    // Explicitly find by adminId
+    const buses = await BusEntity.find({ adminId });
+
+    res.status(200).json(buses);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
-
 // Get all BusEntities
 export const getAllBusEntities = async (req, res) => {
   try {
@@ -96,6 +109,31 @@ export const deleteBusEntity = async (req, res) => {
     }
 
     res.status(200).json({ message: "Bus entity deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getCompaniesWithBusCounts = async (req, res) => {
+  try {
+    // Fetch all admins
+    const admins = await Admin.find();
+    if (!admins || admins.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Fetch bus counts for each admin
+    const results = await Promise.all(
+      admins.map(async (admin) => {
+        const busCount = await BusEntity.countDocuments({ adminId: admin._id });
+        return {
+          companyName: admin.name,
+          totalBuses: busCount,
+        };
+      })
+    );
+
+    res.status(200).json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

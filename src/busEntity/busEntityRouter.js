@@ -6,6 +6,7 @@ import {
   updateBusEntity,
   deleteBusEntity,
   getBusEntitiesByAdminId,
+  getCompaniesWithBusCounts,
 } from "./busEntityController.js";
 
 const busEntityRouter = express.Router();
@@ -14,11 +15,15 @@ const busEntityRouter = express.Router();
 busEntityRouter.post("/", createBusEntity);
 
 // Get all BusEntities
-busEntityRouter.get("/", getAllBusEntities);
+// busEntityRouter.get("/", getAllBusEntities);
 
 // Get a specific BusEntity by ID
 busEntityRouter.get("/:id", getBusEntityById);
-busEntityRouter.get("/:adminId", getBusEntitiesByAdminId);
+busEntityRouter.get("/", getBusEntitiesByAdminId);
+busEntityRouter.get(
+  "/get-companies-with-bus-counts",
+  getCompaniesWithBusCounts
+);
 
 // Update a specific BusEntity
 busEntityRouter.put("/:id", updateBusEntity);

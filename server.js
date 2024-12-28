@@ -4,9 +4,7 @@ import dotenv from "dotenv";
 import globalErrorHandler from "./src/middlewares/globalErrorHandler.js";
 import http from "http";
 import swaggerUi from "swagger-ui-express";
-import open from "open";
 import { initializeWebSocket } from "./webSocket.js";
-import readline from "readline";
 // import swaggerFile from "./swagger-output.json" assert { type: "json" };
 
 // Importing routes
@@ -23,18 +21,6 @@ import busEntityRouter from "./src/busEntity/busEntityRouter.js";
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-let scannedUID = "";
-
-rl.on("line", (line) => {
-  scannedUID = line.trim();
-  console.log(`Scanned UID: ${scannedUID}`);
-});
 
 app.use(express.json());
 const corsOptions = {

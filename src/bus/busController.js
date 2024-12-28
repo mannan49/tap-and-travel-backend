@@ -170,7 +170,7 @@ export const updateSeatStatusOfBus = async (req, res) => {
 
   try {
     // Find the bus by its ID
-    const bus = await Bus.findOne({ busId });
+    const bus = await Bus.findOne({ _id: busId });
 
     if (!bus) {
       return res.status(404).json({ message: "Bus not found" });

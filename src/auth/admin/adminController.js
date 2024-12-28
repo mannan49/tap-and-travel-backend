@@ -24,7 +24,7 @@ export const registerAdmin = async (req, res, next) => {
     });
   }
 
-  const { name, email, password, company , role, companyId } = req.body;
+  const { name, email, password, company, role, companyId } = req.body;
 
   try {
     const adminExists = await Admin.findOne({ email });
@@ -168,7 +168,9 @@ export const getAllAdmins = async (req, res, next) => {
 
 export const getCompaniesInforamtion = async (req, res, next) => {
   try {
-    const admins = await Admin.find({ role: "admin" }).select("_id name email company");
+    const admins = await Admin.find({ role: "admin" }).select(
+      "_id name email company"
+    );
     const adminWithBusCount = await Promise.all(
       admins.map(async (admin) => {
         const busCount = await Bus.countDocuments({ adminId: admin._id });
@@ -193,7 +195,9 @@ export const getCompanyName = async (req, res, next) => {
   const { id } = req.body;
 
   if (!id) {
-    return res.status(400).json({ message: "ID is required in the request body." });
+    return res
+      .status(400)
+      .json({ message: "ID is required in the request body." });
   }
 
   try {
@@ -212,4 +216,51 @@ export const getCompanyName = async (req, res, next) => {
   }
 };
 
+export const getDriversByAdminId = async (req, res) => {
+  const { adminId } = req.query;
 
+  try {
+    const buses = await Admin.find({ companyId: adminId });
+
+    res.status(200).json(buses);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const deleteDriver = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const deletedDriver = await Admin.findByIdAndDelete(id);
+
+    if (!deletedDriver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    res.status(200).json({ message: "Driver deleted successfully" });
+  } catch (error) {
+    next({
+      status: 500,
+      message: error.message || "Error deleting driver",
+    });
+  }
+};
+
+export const getDriverById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const driver = await Admin.findById(id).populate("adminId", "name email");
+
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    res.status(200).json({ message: "Driver fetched successfully", driver });
+  } catch (error) {
+    next({
+      status: 500,
+      message: error.message || "Error fetching driver",
+    });
+  }
+};

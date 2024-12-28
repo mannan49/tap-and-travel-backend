@@ -1,6 +1,45 @@
 import mongoose from "mongoose";
 import Route from "../routes/routeModel.js";
-import BusEntity from "../busEntity/busEntityModel.js";
+
+const BusEntitySchema = new mongoose.Schema(
+  {
+    adminId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      required: [true, "Admin ID is required."],
+    },
+    busNumber: {
+      type: String,
+      required: true,
+    },
+    busCapacity: {
+      type: String,
+      required: true,
+    },
+    engineNumber: {
+      type: String,
+    },
+    wifi: {
+      type: Boolean,
+      default: false,
+    },
+    ac: {
+      type: Boolean,
+      default: false,
+    },
+    fuelType: {
+      type: String,
+      default: "diesel",
+      enum: ["diesel", "electric"],
+    },
+    standard: {
+      type: String,
+      default: "executive",
+      enum: ["economy", "executive", "business"],
+    },
+  },
+  { _id: false }
+);
 
 // Seat Schema
 const SeatSchema = new mongoose.Schema(
@@ -98,9 +137,7 @@ const BusSchema = new mongoose.Schema(
         message: "Date must be greater than or equal to today.",
       },
     },
-    busDetails: {
-      type: BusEntity.schema,
-    },
+    busDetails: BusEntitySchema,
     seats: [SeatSchema],
     fare: FareSchema,
   },

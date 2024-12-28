@@ -130,7 +130,6 @@ export const getTicketInformation = async (req, res, next) => {
           seatNumber: ticket.seatNumber,
           date: ticket.travelDate,
         };
-        console.log(ticketInformationObject);
         return ticketInformationObject;
       })
     );
