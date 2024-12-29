@@ -17,6 +17,7 @@ import locationRouter from "./src/location/locationRouter.js";
 import routeRouter from "./src/routes/routeRouter.js";
 import driverRouter from "./src/auth/driver/driverRouter.js";
 import busEntityRouter from "./src/busEntity/busEntityRouter.js";
+import paymentRouter from "./src/payment/paymentRouter.js";
 
 dotenv.config();
 const app = express();
@@ -45,6 +46,7 @@ app.use("/api/v1/ticket", ticketRouter);
 app.use("/api/v1/location", locationRouter);
 app.use("/api/v1/route", routeRouter);
 app.use("/api/v1/bus-entity", busEntityRouter);
+app.use("/api/v1/payment", paymentRouter);
 
 // Welcome route
 app.get("/", (req, res) => {

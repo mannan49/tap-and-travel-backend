@@ -30,7 +30,17 @@ const userSchema = new mongoose.Schema({
   },
   RFIDCardNumber: {
     type: String,
-    required: true,
+  },
+  address: {
+    province: String,
+    city: String,
+    postalCode: Number,
+    address: String
+  },
+  RFIDCardStatus: {
+    type: "String",
+    default: "pending",
+    enum: ["pending", "booked", "delivered"],
   },
   travelHistory: Array,
   paymentInformation: Object,

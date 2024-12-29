@@ -10,6 +10,8 @@ const config = {
   AUTH_EMAIL: process.env.AUTH_EMAIL,
   AUTH_PASSWORD: process.env.AUTH_PASSWORD,
   OTP_EXPIRATION: process.env.OTP_EXPIRATION,
+  STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY
 };
 
 export default config;

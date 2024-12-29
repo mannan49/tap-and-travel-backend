@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Admin from "../auth/admin/adminModel.js";
 import BusEntity from "../busEntity/busEntityModel.js";
 import Route from "../routes/routeModel.js";
@@ -165,6 +166,37 @@ export const updateBus = async (req, res) => {
   }
 };
 
+export const updatePatchBus = async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body; // Destructure the entire body to allow flexible updates
+
+  try {
+    // Validate the id
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid bus ID" });
+    }
+
+    // Find the bus and update only the fields provided in the request
+    const updatedBus = await Bus.findByIdAndUpdate(id, updates, {
+      new: true, // Return the updated document
+      runValidators: true, // Run schema validators for updates
+    });
+
+    if (!updatedBus) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    res.status(200).json({
+      message: "Bus updated successfully",
+      data: updatedBus,
+    });
+  } catch (error) {
+    console.error("Error updating bus:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 export const updateSeatStatusOfBus = async (req, res) => {
   const { busId, seatNumber, booked, email, gender } = req.body;
 
@@ -236,3 +268,47 @@ export const getBusesByAdminId = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getBusesOnSearchFilters = async (req, res) => {
+
+  try {
+    const filters = req.body;
+
+    const query = {};
+
+    // Define a mapping of non-nested keys to nested fields
+    const nestedFieldsMapping = {
+      startCity: 'route.startCity',
+      endCity: 'route.endCity', 
+      busNumber: 'busDetails.busNumber',
+      engineNumber: 'busDetails.engineNumber',
+      actualPrice: 'fare.actualPrice',
+    };
+
+    // Loop through filters and construct the query
+    Object.keys(filters).forEach((key) => {
+      if (nestedFieldsMapping[key]) {
+        // If key exists in mapping, map it to the corresponding nested field
+        query[nestedFieldsMapping[key]] = filters[key];
+      } else {
+        // Otherwise, use the key directly
+        query[key] = filters[key];
+      }
+    });
+
+    // Fetch the filtered buses
+    const buses = await Bus.find(query);
+
+    res.status(200).json({
+      success: true,
+      message: 'Filtered buses retrieved successfully',
+      data: buses,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching filtered buses',
+      error: error.message,
+    });
+  }
+}

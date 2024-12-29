@@ -25,6 +25,20 @@ const userValidationRules = () => {
   ];
 };
 
+const passwordValidationRules = () => {
+  return [
+      body("newPassword")
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters long")
+      .matches(/[A-Z]/)
+      .withMessage("Password must contain at least one uppercase letter")
+      .matches(/[0-9]/)
+      .withMessage("Password must contain at least one number")
+      .matches(/[\W]/)
+      .withMessage("Password must contain at least one special character"),
+  ];
+};
+
 const loginValidationRules = () => {
   return [
     body("email").isEmail().withMessage("Please provide a valid email address"),
@@ -36,4 +50,4 @@ const loginValidationRules = () => {
   ];
 };
 
-export { userValidationRules, loginValidationRules };
+export { userValidationRules, loginValidationRules, passwordValidationRules };

@@ -24,9 +24,6 @@ const AdminSchema = new mongoose.Schema(
     },
     company: {
       type: String,
-      required: function () {
-        return this.role === "admin";
-      },
     },
     companyId: {
       type: mongoose.Schema.Types.ObjectId,

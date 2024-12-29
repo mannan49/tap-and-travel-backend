@@ -1,0 +1,147 @@
+import stripe from "stripe";
+import Bus from "../bus/busModel.js";
+import User from "../auth/user/userModel.js";
+import Admin from "../auth/admin/adminModel.js";
+import Payment from "./paymentModel.js";
+import config from "../config/index.js"
+
+const stripeInstance = stripe(config.STRIPE_SECRET_KEY);
+
+// Function to validate IDs in the database
+const validateEntities = async (busId, userId, adminId) => {
+    const bus = await Bus.findById(busId);
+    const user = await User.findById(userId);
+    const admin = await Admin.findById(adminId);
+
+    if (!bus) throw new Error("Bus ID does not exist.");
+    if (!user) throw new Error("User ID does not exist.");
+    if (!admin) throw new Error("Admin ID does not exist.");
+};
+
+// Create Payment Intent
+export const createPaymentIntent = async (req, res) => {
+    try {
+        const { amount, currency, busId, userId, adminId } = req.body;
+
+        // Validate entities
+        await validateEntities(busId, userId, adminId);
+
+        const paymentIntent = await stripeInstance.paymentIntents.create({
+            amount: amount * 100,
+            currency: currency || "INR",
+            metadata: { busId, userId, adminId },
+        });
+
+        const paymentRecord = new Payment({
+            paymentId: paymentIntent.id,
+            userId,
+            busId,
+            adminId,
+            amount,
+            currency: currency || "INR",
+            status: "pending",
+        });
+
+        await paymentRecord.save();
+
+        res.status(200).json({ clientSecret: paymentIntent.client_secret });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const updatePaymentStatus = async (req, res) => {
+    const { paymentId, status } = req.body;
+
+    try {
+        const payment = await Payment.findOne({ paymentId });
+
+        if (!payment) {
+            return res.status(404).json({ error: "Payment not found" });
+        }
+
+        payment.status = status;
+        payment.updatedAt = new Date();
+
+        await payment.save();
+
+        res.status(200).json({ message: "Payment status updated successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+// Webhook to handle payment confirmation
+export const handleWebhook = async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    let event;
+
+    try {
+        event = stripeInstance.webhooks.constructEvent(
+            req.body,
+            sig,
+            endpointSecret
+        );
+    } catch (err) {
+        console.error("Webhook error:", err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    if (event.type === "payment_intent.succeeded") {
+        const paymentIntent = event.data.object;
+
+        // Update payment status in the database
+        await Payment.findOneAndUpdate(
+            { paymentId: paymentIntent.id },
+            { status: "succeeded" }
+        );
+    } else if (event.type === "payment_intent.payment_failed") {
+        const paymentIntent = event.data.object;
+
+        // Update payment status in the database
+        await Payment.findOneAndUpdate(
+            { paymentId: paymentIntent.id },
+            { status: "failed" }
+        );
+    }
+
+    res.json({ received: true });
+};
+
+
+
+export const getPaymentsBySearchFilter = async (req, res) => {
+    try {
+        const { adminId, paymentId, userId, busId, status, updatedAt } = req.body;
+
+        // Ensure adminId is provided
+        if (!adminId) {
+            return res.status(400).json({ message: "AdminId is required." });
+        }
+
+        // Build the query object
+        const query = { adminId };
+
+        if (paymentId) query.paymentId = paymentId;
+        if (userId) query.userId = userId;
+        if (busId) query.busId = busId;
+        if (status) query.status = status;
+        if (updatedAt) query.updatedAt = { $gte: new Date(updatedAt) };
+
+        // Find payments based on the constructed query
+        const payments = await Payment.find(query);
+
+        res.status(200).json({
+            message: "Payments retrieved successfully.",
+            data: payments,
+        });
+    } catch (error) {
+        res
+            .status(500)
+            .json({ message: "Error retrieving payments.", error: error.message });
+    }
+};
+

@@ -7,6 +7,8 @@ import {
   updateBus,
   getBusesByAdminId,
   updateSeatStatusOfBus,
+  updatePatchBus,
+  getBusesOnSearchFilters,
 } from "./busController.js";
 import { busValidationRules } from "./validation.js";
 import { validate } from "../middlewares/validate.js";
@@ -14,9 +16,11 @@ import { authenticate } from "../middlewares/authenticate.js";
 
 const busRouter = express.Router();
 
-busRouter.route("/").post( validate, addBus).get(getBuses);
+busRouter.route("/").post(validate, addBus).get(getBuses);
 
 busRouter.get("/ad-bus", getBusesByAdminId);
+
+busRouter.post("/bus-advance-search", getBusesOnSearchFilters);
 
 busRouter.patch("/update-seat-status", updateSeatStatusOfBus);
 
@@ -24,6 +28,7 @@ busRouter
   .route("/:id")
   .get(getBusById)
   .delete(authenticate, deleteBus)
-  .put(busValidationRules(), validate, updateBus);
+  .put(validate, updateBus)
+  .patch(validate, updatePatchBus);
 
 export default busRouter;

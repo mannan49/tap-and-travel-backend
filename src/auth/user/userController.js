@@ -103,7 +103,7 @@ const loginUser = async (req, res, next) => {
     );
 
     return res.status(200).json({
-      message: `Welcome ${user.name.toUpperCase()} to dashboard!`,
+      message: `Welcome ${user.name.toUpperCase()} to Tap & Travel.`,
       token,
     });
   } catch (err) {
@@ -124,7 +124,7 @@ const getAllUsers = async (req, res, next) => {
 
 const addRfidCardNumber = async (req, res, next) => {
   try {
-    const { email, RFIDCardNumber } = req.body;
+    const { email, RFIDCardNumber, RFIDCardStatus } = req.body;
 
     // Validate the input
     if (!email || !RFIDCardNumber) {
@@ -142,7 +142,7 @@ const addRfidCardNumber = async (req, res, next) => {
     // Find the user by email and update the RFID card number
     const user = await User.findOneAndUpdate(
       { email },
-      { RFIDCardNumber },
+      { RFIDCardNumber, RFIDCardStatus },
       { new: true } // Return the updated user
     );
 
@@ -213,7 +213,138 @@ const getRfidCardNumber = async (req, res, next) => {
   }
 };
 
+
+const updateProfile = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User Not Found." });
+    }
+
+    const updateFields = {};
+    const allowedFields = ["name", "phoneNumber", "address", "RFIDCardStatus"];
+
+    // Loop through allowed fields and add them to updateFields if they exist in req.body
+    allowedFields.forEach((field) => {
+      if (req.body[field]) {
+        updateFields[field] = req.body[field];
+      }
+    });
+
+    // Update the user document
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId },
+      { $set: updateFields },
+      { new: true } // Return the updated user document
+    );
+
+    if (!updatedUser) {
+      return next({ status: 404, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+
+
+const verifyPassword = async (req, res, next) => {
+  try {
+    const { email, oldPassword } = req.body;
+    if (!email || !oldPassword) {
+      return res.status(400).json({
+        message: "Email and old password are required",
+      });
+    }
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next({ status: 404, message: "User not found" });
+    }
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Password doesn't match to the Old Pasword." });
+    }
+
+    // If the password matches
+    return res.status(200).json({ verified: true, message: "Password is correct" });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+
+const changePassword = async (req, res, next) => {
+  try {
+    const { email, oldPassword, newPassword } = req.body;
+
+    // Validate the input
+    if (!email || !oldPassword || !newPassword) {
+      return res.status(400).json({
+        message: "Email, old password, and new password are required",
+      });
+    }
+
+    // Find the user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next({ status: 404, message: "User not found" });
+    }
+
+    // Check if the old password matches the user's current password
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return next({ status: 401, message: "Old password is incorrect" });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({ message: "Password changed successfully" });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+
+
+const getUserById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Validate the input
+    if (!id) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    // Find the user by ID
+    const user = await User.findById(id);
+    if (!user) {
+      return next({ status: 404, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "User fetched successfully",
+      user,
+    });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+
+
 export {
+  updateProfile, changePassword, getUserById, verifyPassword,
   addUser,
   loginUser,
   getAllUsers,
