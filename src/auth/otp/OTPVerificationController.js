@@ -26,11 +26,21 @@ export const sendOTP = async (req, res) => {
     await otpEntry.save();
 
     // Send OTP to the user's email
+
     await transporter.sendMail({
       from: config.AUTH_EMAIL,
       to: email,
       subject: "Your OTP Code",
-      text: `Your OTP code is ${otp}. It is valid for 10 minutes.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
+          <h2 style="color: #333;">Your OTP Code</h2>
+          <p style="font-size: 16px;">Use the following OTP to complete your verification. It is valid for <strong>10 minutes</strong>.</p>
+          <p style="font-size: 24px; font-weight: bold; color: #d32f2f; border: 2px dashed #d32f2f; display: inline-block; padding: 10px 20px; margin-top: 10px;">
+            ${otp}
+          </p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `,
     });
 
     res.status(200).json({ message: "OTP sent to your email", email: email });
