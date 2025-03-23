@@ -74,26 +74,15 @@ const addUser = async (req, res, next) => {
 
 const loginUser = async (req, res, next) => {
   try {
-    const { email, password, RFIDCardNumber } = req.body;
-    let user;
-    if (RFIDCardNumber) {
-      if (typeof RFIDCardNumber !== "string") {
-        return res.status(400).json({ message: "RFID Card Not found" });
-      }
-      user = await User.findOne({ RFIDCardNumber: String(RFIDCardNumber) });
-      if (!user) {
-        return next({ status: 401, message: "Invalid RFID Card Number" });
-      }
-    } else if (email && password) {
-      // Check if login is via email and password
-      user = await User.findOne({ email });
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return next({ status: 401, message: "Invalid credentials" });
-      }
-      if (!user) {
-        return next({ status: 401, message: "Invalid credentials" });
-      }
+    const { email, password } = req.body;
+
+    user = await User.findOne({ email });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return next({ status: 401, message: "Invalid credentials" });
+    }
+    if (!user) {
+      return next({ status: 401, message: "Invalid credentials" });
     }
 
     const token = jwt.sign(
@@ -213,7 +202,6 @@ const getRfidCardNumber = async (req, res, next) => {
   }
 };
 
-
 const updateProfile = async (req, res, next) => {
   try {
     const { userId } = req.body;
@@ -252,8 +240,6 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-
-
 const verifyPassword = async (req, res, next) => {
   try {
     const { email, oldPassword } = req.body;
@@ -268,16 +254,19 @@ const verifyPassword = async (req, res, next) => {
     }
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Password doesn't match to the Old Pasword." });
+      return res
+        .status(401)
+        .json({ message: "Password doesn't match to the Old Pasword." });
     }
 
     // If the password matches
-    return res.status(200).json({ verified: true, message: "Password is correct" });
+    return res
+      .status(200)
+      .json({ verified: true, message: "Password is correct" });
   } catch (err) {
     return next({ status: 500, message: err.message });
   }
 };
-
 
 const changePassword = async (req, res, next) => {
   try {
@@ -315,8 +304,6 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-
-
 const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -341,10 +328,11 @@ const getUserById = async (req, res, next) => {
   }
 };
 
-
-
 export {
-  updateProfile, changePassword, getUserById, verifyPassword,
+  updateProfile,
+  changePassword,
+  getUserById,
+  verifyPassword,
   addUser,
   loginUser,
   getAllUsers,
