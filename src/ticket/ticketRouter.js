@@ -1,6 +1,6 @@
 import express from "express";
 import {
-  generateTicket,
+  generateTickets,
   getTicketsForUser,
   cancelTicket,
   getTicketInformation,
@@ -10,7 +10,7 @@ import { authenticate } from "../middlewares/authenticate.js";
 const ticketRouter = express.Router();
 
 // Generate ticket (Authenticated users)
-ticketRouter.post("/generate", generateTicket);
+ticketRouter.post("/generate", generateTickets);
 
 // Get all tickets for a user (Authenticated users)
 ticketRouter.get("/user/:userId", getTicketsForUser);

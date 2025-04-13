@@ -164,47 +164,53 @@ export const updateBus = async (req, res) => {
 
 
 export const updateSeatStatusOfBus = async (req, res) => {
-  const { busId, seatNumber, booked, email, gender } = req.body;
-
+  const { busId, seatsData } = req.body;
   try {
-    // Find the bus by its ID
     const bus = await Bus.findOne({ _id: busId });
-
     if (!bus) {
       return res.status(404).json({ message: "Bus not found" });
     }
+    const updatedSeats = [];
+    for (let seatData of seatsData) {
+      const { seatNumber, booked, email, gender } = seatData;
+      // Find the seat to update
+      const seat = bus.seats.find((s) => s.seatNumber === seatNumber);
 
-    // Find the seat to update
-    const seat = bus.seats.find((s) => s.seatNumber === seatNumber);
-
-    if (!seat) {
-      return res.status(404).json({ message: "Seat not found" });
-    }
-
-    // Update the seat's details
-    seat.booked = booked ?? true; // Defaults to true if not provided
-    seat.email = email || seat.email; // Updates email if provided
-    seat.gender = gender || seat.gender; // Updates gender if provided
-
-    // Update the neighbor seat's neighborGender
-    if (seat.neighborSeatNumber !== null) {
-      const neighborSeatIndex = parseInt(seat.neighborSeatNumber, 10); // Get the neighbor seat's index
-      const neighborSeat = bus.seats[neighborSeatIndex]; // Access the neighbor seat object
-
-      if (neighborSeat) {
-        neighborSeat.neighborGender = gender || neighborSeat.neighborGender; // Update neighbor's neighborGender
+      if (!seat) {
+        return res
+          .status(404)
+          .json({ message: `Seat ${seatNumber} not found` });
       }
+
+      // Update the seat's details
+      seat.booked = booked ?? true; // Defaults to true if not provided
+      seat.email = email || seat.email; // Updates email if provided
+      seat.gender = gender || seat.gender; // Updates gender if provided
+
+      // Update the neighbor seat's neighborGender
+      if (seat.neighborSeatNumber !== null) {
+        const neighborSeatIndex = parseInt(seat.neighborSeatNumber, 10); // Get the neighbor seat's index
+        const neighborSeat = bus.seats[neighborSeatIndex]; // Access the neighbor seat object
+
+        if (neighborSeat) {
+          neighborSeat.neighborGender = gender || neighborSeat.neighborGender; // Update neighbor's neighborGender
+        }
+      }
+
+      updatedSeats.push(seat); // Add updated seat to the array
     }
-
-    // Save the updated bus document
     await bus.save();
-
-    res.status(200).json({ message: "Seat status updated successfully", seat });
+    res.status(200).json({ message: "Seat status updated successfully" });
   } catch (error) {
     console.error("Error updating seat status:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
+
 
 // Get buses by adminId or email
 export const getBusesByAdminId = async (req, res) => {

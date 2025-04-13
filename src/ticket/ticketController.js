@@ -4,47 +4,65 @@ import User from "../auth/user/userModel.js";
 import Admin from "../auth/admin/adminModel.js";
 
 // Generate new ticket
-export const generateTicket = async (req, res, next) => {
-  const { userId, busId, seatNumber, travelDate } = req.body;
+export const generateTickets = async (req, res, next) => {
+  const { tickets } = req.body;
+
+  console.log("Req", req.body);
 
   try {
-    // Ensure the bus exists and fetch its fare
-    const bus = await Bus.findById(busId);
-    if (!bus) return res.status(404).json({ message: "Bus not found" });
+    const createdTickets = [];
 
-    // Ensure the user exists
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    for (let ticketData of tickets) {
+      const { userId, busId, seatNumber } = ticketData;
 
-    // Check if the seat is already booked
-    const existingTicket = await Ticket.findOne({
-      busId,
-      seatNumber,
-      status: "booked",
-    });
-    if (existingTicket)
-      return res.status(400).json({ message: "Seat is already booked." });
+      // Ensure the bus exists and fetch its fare
+      const bus = await Bus.findById(busId);
+      if (!bus)
+        return res
+          .status(404)
+          .json({ message: `Bus with ID ${busId} not found` });
 
-    // Create and save the ticket with fare fetched from the bus model
-    const newTicket = new Ticket({
-      userId,
-      busId,
-      seatNumber,
-      fare: bus.fare.actualPrice,
-      travelDate: bus.date,
-      adminId: bus.adminId,
-      ticketId: `TICKET-${Date.now()}-${Math.random()
-        .toString(36)
-        .substr(2, 5)}`,
-    });
+      // Ensure the user exists
+      const user = await User.findById(userId);
+      if (!user)
+        return res
+          .status(404)
+          .json({ message: `User with ID ${userId} not found` });
 
-    const savedTicket = await newTicket.save();
-    return res.status(201).json({ ticket: savedTicket });
+      // Check if the seat is already booked
+      const existingTicket = await Ticket.findOne({
+        busId,
+        seatNumber,
+        status: "booked",
+      });
+      if (existingTicket)
+        return res
+          .status(400)
+          .json({
+            message: `Seat ${seatNumber} on bus ${busId} is already booked.`,
+          });
+
+      // Create and save the ticket with fare fetched from the bus model
+      const newTicket = new Ticket({
+        userId,
+        busId,
+        seatNumber,
+        fare: bus.fare.actualPrice,
+        travelDate: bus.date,
+        adminId: bus.adminId,
+        ticketId: `TICKET-${Date.now()}-${Math.random()
+          .toString(36)
+          .substr(2, 5)}`,
+      });
+      const savedTicket = await newTicket.save();
+      createdTickets.push(savedTicket);
+    }
+
+    return res.status(201).json({ tickets: createdTickets });
   } catch (err) {
     return next({ status: 500, message: err.message });
   }
 };
-
 // Get all tickets for a user
 export const getTicketsForUser = async (req, res, next) => {
   const { userId } = req.params;
