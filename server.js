@@ -5,7 +5,7 @@ import globalErrorHandler from "./src/middlewares/globalErrorHandler.js";
 import http from "http";
 import swaggerUi from "swagger-ui-express";
 import { initializeWebSocket } from "./webSocket.js";
-// import swaggerFile from "./swagger-output.json" assert { type: "json" };
+import swaggerFile from "./swagger-output.json" assert { type: "json" };
 
 // Importing routes
 import userRouter from "./src/auth/user/userRouter.js";
@@ -35,7 +35,7 @@ app.use(cors(corsOptions));
 connectDB();
 
 // Use the generated Swagger JSON file with Swagger UI
-// app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 // API routes
 app.use("/api/v1/admin", adminRouter);

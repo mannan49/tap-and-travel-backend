@@ -25,19 +25,64 @@ const authenticate = (req, res, next) => {
   }
 };
 
-const isSuperAdmin = async (req, res, next) => {
+const isAdmin = async (req, res, next) => {
   try {
-    const admin = await Admin.findById(req.userId);
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return next(createHttpError(401, "Authentication token is missing."));
+    }
+
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    const adminId = decoded.sub;
+
+    const admin = await Admin.findById(adminId);
     if (!admin) {
-      return next(createHttpError(404, "Admin not found"));
+      return next(createHttpError(404, "Admin not found."));
     }
-
-    if (admin.role !== "superadmin") {
-      return next(createHttpError(403, "Access denied. SuperAdmin only."));
+    if (admin.role !== "admin") {
+      return next(createHttpError(403, "Access denied. Admin only."));
     }
-
+    req.admin = admin;
     next();
   } catch (error) {
+    if (error.name === "JsonWebTokenError") {
+      return next(createHttpError(401, "Invalid token."));
+    }
+    if (error.name === "TokenExpiredError") {
+      return next(createHttpError(401, "Token has expired."));
+    }
+    return next(createHttpError(500, error.message));
+  }
+};
+
+const isSuperAdmin = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return next(createHttpError(401, "Authentication token is missing."));
+    }
+
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    const adminId = decoded.sub;
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return next(createHttpError(404, "Admin not found."));
+    }
+    if (admin.role !== "superadmin") {
+      return next(createHttpError(403, "Access denied. SuprAdmin only."));
+    }
+    req.admin = admin;
+    next();
+  } catch (error) {
+    if (error.name === "JsonWebTokenError") {
+      return next(createHttpError(401, "Invalid token."));
+    }
+    if (error.name === "TokenExpiredError") {
+      return next(createHttpError(401, "Token has expired."));
+    }
     return next(createHttpError(500, error.message));
   }
 };

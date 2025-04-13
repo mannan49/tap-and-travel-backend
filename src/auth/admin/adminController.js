@@ -5,6 +5,9 @@ import Admin from "./adminModel.js";
 import config from "../../config/index.js";
 import { validationResult } from "express-validator";
 import Bus from "../../bus/busModel.js";
+import Route from "../../routes/routeModel.js";
+import BusEntity from "../../busEntity/busEntityModel.js";
+import Payment from "../../payment/paymentModel.js";
 
 export const getNextAdminId = async () => {
   const lastAdmin = await Admin.findOne().sort({ adminId: -1 });
@@ -264,3 +267,46 @@ export const getDriverById = async (req, res, next) => {
     });
   }
 };
+
+
+export const getAdminsDataAnalytics = async (req, res) => {
+  try {
+
+    const admins = await Admin.find({ role: "admin" });
+
+    const response = await Promise.all(
+      admins.map(async (admin) => {
+        const busesCount = await Bus.countDocuments({ adminId: admin._id });
+        const routesCount = await Route.countDocuments({ adminId: admin._id });
+        const vehiclesCount = await BusEntity.countDocuments({ adminId: admin._id });
+        const driversCount = await Admin.countDocuments({ role: "driver", companyId: admin._id });
+        const payments = await Payment.find({
+          adminId: admin._id,
+          status: "succeeded",
+        });
+        const totalRevenue = payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+        return {
+          adminId: admin._id,
+          adminName: admin.name,
+          routes: routesCount,
+          vehicles: vehiclesCount,
+          drivers: driversCount,
+          buses: busesCount,
+          revenue: totalRevenue,
+        };
+      })
+    )
+    res.status(200).json({
+      success: true,
+      data: response,
+    });
+
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fethcing admins data analytics",
+      error: error.message
+    })
+  }
+}

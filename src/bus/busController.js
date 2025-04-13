@@ -130,43 +130,9 @@ export const deleteBus = async (req, res) => {
   }
 };
 
-// Update bus by ID
+
+
 export const updateBus = async (req, res) => {
-  const { id } = req.params;
-  const {
-    route,
-    departureTime,
-    arrivalTime,
-    date,
-    busCapacity,
-    busDetails,
-    fare,
-  } = req.body;
-
-  try {
-    const bus = await Bus.findById(id);
-    if (bus) {
-      // Update bus properties
-      bus.route = route || bus.route;
-      bus.departureTime = departureTime || bus.departureTime;
-      bus.arrivalTime = arrivalTime || bus.arrivalTime;
-      bus.date = date || bus.date;
-      bus.busCapacity = busCapacity || bus.busCapacity;
-      bus.busDetails = busDetails || bus.busDetails;
-      bus.fare = fare || bus.fare;
-
-      const updatedBus = await bus.save();
-      res.status(200).json(updatedBus);
-    } else {
-      res.status(404).json({ message: "Bus not found" });
-    }
-  } catch (error) {
-    console.error("Error updating bus:", error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-export const updatePatchBus = async (req, res) => {
   const { id } = req.params;
   const updates = req.body; // Destructure the entire body to allow flexible updates
 

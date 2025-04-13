@@ -115,33 +115,27 @@ export const handleWebhook = async (req, res) => {
 
 export const getPaymentsBySearchFilter = async (req, res) => {
     try {
-        const { adminId, paymentId, userId, busId, status, updatedAt } = req.body;
-
-        // Ensure adminId is provided
+        const { adminId, ...filters } = req.body;
         if (!adminId) {
             return res.status(400).json({ message: "AdminId is required." });
         }
 
-        // Build the query object
-        const query = { adminId };
-
-        if (paymentId) query.paymentId = paymentId;
-        if (userId) query.userId = userId;
-        if (busId) query.busId = busId;
-        if (status) query.status = status;
-        if (updatedAt) query.updatedAt = { $gte: new Date(updatedAt) };
-
-        // Find payments based on the constructed query
+        // Build dynamic query object
+        const query = { adminId, ...filters };
         const payments = await Payment.find(query);
+
+        // Calculate total amount
+        const total = payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
 
         res.status(200).json({
             message: "Payments retrieved successfully.",
+            total,
             data: payments,
         });
     } catch (error) {
-        res
-            .status(500)
-            .json({ message: "Error retrieving payments.", error: error.message });
+        res.status(500).json({ message: "Error retrieving payment", error: error.message });
     }
 };
+
+
 

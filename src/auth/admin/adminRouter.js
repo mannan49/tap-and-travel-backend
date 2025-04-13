@@ -9,6 +9,7 @@ import {
   getCompanyName,
   getDriversByAdminId,
   deleteDriver,
+  getAdminsDataAnalytics,
 } from "./adminController.js";
 import { authenticate, isSuperAdmin } from "../../middlewares/authenticate.js";
 import { loginValidationRules } from "../user/validation.js";
@@ -29,5 +30,7 @@ adminRouter.put("/profile", authenticate, updateAdminProfile);
 // adminRouter.get("/", authenticate, getAllAdmins);
 adminRouter.get("/", getDriversByAdminId);
 adminRouter.delete("/:id", deleteDriver);
+
+adminRouter.get("/admins-analytics", isSuperAdmin, getAdminsDataAnalytics)
 
 export default adminRouter;

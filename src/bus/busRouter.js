@@ -7,7 +7,6 @@ import {
   updateBus,
   getBusesByAdminId,
   updateSeatStatusOfBus,
-  updatePatchBus,
   getBusesOnSearchFilters,
 } from "./busController.js";
 import { busValidationRules } from "./validation.js";
@@ -29,6 +28,5 @@ busRouter
   .get(getBusById)
   .delete(authenticate, deleteBus)
   .put(validate, updateBus)
-  .patch(validate, updatePatchBus);
 
 export default busRouter;
