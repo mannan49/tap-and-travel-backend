@@ -145,6 +145,7 @@ export const getTicketInformation = async (req, res, next) => {
         );
 
         return {
+          _id: ticket?._id,
           userId: user._id,
           busId: bus._id,
           adminId: admin._id,
