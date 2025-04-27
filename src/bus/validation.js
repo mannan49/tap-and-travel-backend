@@ -1,4 +1,5 @@
 import { body } from "express-validator";
+import moment from "moment";
 
 const busValidationRules = () => {
   return [
@@ -6,59 +7,53 @@ const busValidationRules = () => {
       .isMongoId()
       .withMessage("Admin ID must be a valid MongoDB Object ID"),
 
-    // Validate route
-    body("route")
-      .exists()
-      .withMessage("Route information is required")
-      .isObject()
-      .withMessage("Route must be an object"),
-
-    body("route.startCity").notEmpty().withMessage("Start city is required"),
-
-    body("route.endCity").notEmpty().withMessage("End city is required"),
-
-    body("route.stops").isArray().withMessage("Stops must be an array"),
-
+    // Validate date separately
     body("date")
       .isISO8601()
-      .toDate()
       .withMessage("Date must be a valid date format")
-      .isAfter()
-      .withMessage("Date must be in the future"),
+      .custom((dateValue) => {
+        const today = moment().startOf("day");
+        const selectedDate = moment(dateValue, "YYYY-MM-DD");
 
-    body("busCapacity")
-      .isInt({ gt: 0 })
-      .withMessage("Bus capacity must be a positive number"),
+        if (!selectedDate.isValid()) {
+          throw new Error("Invalid date format.");
+        }
 
-    body("busDetails")
-      .exists()
-      .withMessage("Bus details are required")
-      .isObject()
-      .withMessage("Bus details must be an object"),
+        if (selectedDate.isBefore(today)) {
+          throw new Error("Date must be today or a future date.");
+        }
 
-    body("busDetails.busNumber")
-      .notEmpty()
-      .withMessage("Bus number is required"),
+        return true;
+      }),
 
-    body("busDetails.engineNumber")
-      .notEmpty()
-      .withMessage("Engine number is required"),
+    // Validate departureTime separately
+    body("departureTime").custom((departureTimeValue, { req }) => {
+      const { date } = req.body;
 
-    body("busDetails.wifi")
-      .isBoolean()
-      .withMessage("Wifi must be a boolean value"),
+      if (!date) {
+        throw new Error("Date is required to validate departure time.");
+      }
 
-    body("busDetails.ac").isBoolean().withMessage("AC must be a boolean value"),
+      const today = moment().format("YYYY-MM-DD");
 
-    body("busDetails.fuelType")
-      .isIn(["diesel", "electric"])
-      .withMessage('Fuel type must be either "diesel" or "electric"'),
+      if (date === today) {
+        const now = moment();
+        const departureTimeToday = moment(
+          `${today} ${departureTimeValue}`,
+          "YYYY-MM-DD HH:mm"
+        );
 
-    body("busDetails.standard")
-      .isIn(["executive", "business"])
-      .withMessage('Standard must be either "executive" or "business"'),
+        if (!departureTimeToday.isValid()) {
+          throw new Error("Invalid departure time format.");
+        }
 
-    // Validate fare
+        if (departureTimeToday.isBefore(now)) {
+          throw new Error("Departure time must be in the future for today.");
+        }
+      }
+
+      return true;
+    }),
     body("fare")
       .exists()
       .withMessage("Fare information is required")
@@ -78,14 +73,6 @@ const busValidationRules = () => {
       .isString()
       .withMessage("Promo code must be a string"),
 
-    body("fare.paid")
-      .isBoolean()
-      .withMessage("Paid status must be a boolean value"),
-
-    body("fare.paymentMedium")
-      .optional()
-      .isString()
-      .withMessage("Payment medium must be a string"),
   ];
 };
 

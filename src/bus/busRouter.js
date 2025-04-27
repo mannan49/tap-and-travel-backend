@@ -15,7 +15,7 @@ import { authenticate } from "../middlewares/authenticate.js";
 
 const busRouter = express.Router();
 
-busRouter.route("/").post(validate, addBus).get(getBuses);
+busRouter.route("/").post(busValidationRules(), validate, addBus).get(getBuses);
 
 busRouter.get("/ad-bus", getBusesByAdminId);
 
@@ -27,6 +27,6 @@ busRouter
   .route("/:id")
   .get(getBusById)
   .delete(authenticate, deleteBus)
-  .put(validate, updateBus)
+  .put(validate, updateBus);
 
 export default busRouter;

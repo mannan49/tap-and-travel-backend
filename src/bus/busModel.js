@@ -132,10 +132,6 @@ const BusSchema = new mongoose.Schema(
     date: {
       type: Date,
       required: [true, "Date is required."],
-      validate: {
-        validator: (v) => v >= new Date(),
-        message: "Date must be greater than or equal to today.",
-      },
     },
     busDetails: BusEntitySchema,
     seats: [SeatSchema],

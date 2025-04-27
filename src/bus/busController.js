@@ -90,7 +90,20 @@ export const addBus = async (req, res) => {
 export const getBuses = async (req, res) => {
   try {
     const buses = await Bus.find();
-    res.status(200).json(buses);
+
+    const busesWithAvailableSeats = buses.map((bus) => {
+      // Count seats where booked is false
+      const availableSeats = bus.seats.filter(
+        (seat) => seat.booked === false
+      ).length;
+
+      return {
+        ...bus._doc,
+        availableSeats,
+      };
+    });
+
+    res.status(200).json(busesWithAvailableSeats);
   } catch (error) {
     console.error("Error retrieving buses:", error);
     res.status(500).json({ message: error.message });

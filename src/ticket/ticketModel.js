@@ -32,10 +32,6 @@ const TicketSchema = new mongoose.Schema({
   travelDate: {
     type: Date,
     required: true,
-    validate: {
-      validator: (v) => v > Date.now(),
-      message: "Travel date must be in the future",
-    },
   },
   status: {
     type: String,
