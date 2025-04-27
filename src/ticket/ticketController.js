@@ -36,11 +36,9 @@ export const generateTickets = async (req, res, next) => {
         status: "booked",
       });
       if (existingTicket)
-        return res
-          .status(400)
-          .json({
-            message: `Seat ${seatNumber} on bus ${busId} is already booked.`,
-          });
+        return res.status(400).json({
+          message: `Seat ${seatNumber} on bus ${busId} is already booked.`,
+        });
 
       // Create and save the ticket with fare fetched from the bus model
       const newTicket = new Ticket({
@@ -96,8 +94,8 @@ export const cancelTicket = async (req, res, next) => {
 };
 
 export const getTicketInformation = async (req, res, next) => {
-  const { userId } = req.params;
-  const { RFIDCardNumber } = req.body;
+  const { RFIDCardNumber, busId } = req.body;
+  let userId = req.params.userId || req.body.userId;
 
   try {
     let userIdToFetch = userId;
@@ -113,46 +111,54 @@ export const getTicketInformation = async (req, res, next) => {
       userIdToFetch = user._id;
     }
 
-    // Fetch all tickets for the given userId
-    const tickets = await Ticket.find({ userId: userIdToFetch });
+    if (!userIdToFetch) {
+      return res.status(400).json({ message: "UserId is required." });
+    }
 
-    if (!tickets || tickets.length === 0) {
+    // Build ticket query dynamically
+    const ticketQuery = { userId: userIdToFetch };
+    if (busId) {
+      ticketQuery.busId = busId;
+    }
+
+    const tickets = await Ticket.find(ticketQuery);
+    if (!tickets.length) {
       return res
         .status(404)
         .json({ message: "No tickets found for this user." });
     }
 
-    // Aggregate information for each ticket
     const ticketInformation = await Promise.all(
       tickets.map(async (ticket) => {
-        const user = await User.findById(ticket.userId);
-        const admin = await Admin.findById(ticket.adminId);
-        const bus = await Bus.findById(ticket.busId);
+        const [user, admin, bus] = await Promise.all([
+          User.findById(ticket.userId),
+          Admin.findById(ticket.adminId),
+          Bus.findById(ticket.busId),
+        ]);
 
         if (!user || !admin || !bus) {
           throw new Error("Missing related information for ticket.");
         }
 
-        const ticketInformationObject = {
+        return {
           userId: user._id,
           busId: bus._id,
           adminId: admin._id,
           user: user.name,
           phoneNumber: user.phoneNumber,
-          adminName: admin.company,
-          route: bus.route,
-          busDetails: bus.busDetails,
-          departureTime: bus.departureTime,
-          arrivalTime: bus.arrivalTime,
+          adminName: admin?.company,
+          route: bus?.route,
+          fare: bus?.fare,
+          busDetails: bus?.busDetails,
+          departureTime: bus?.departureTime,
+          arrivalTime: bus?.arrivalTime,
           busCapacity: bus.capacity,
           seatNumber: ticket.seatNumber,
           date: ticket.travelDate,
         };
-        return ticketInformationObject;
       })
     );
 
-    // Respond with aggregated ticket information
     res.status(200).json(ticketInformation);
   } catch (err) {
     next({ status: 500, message: err.message });

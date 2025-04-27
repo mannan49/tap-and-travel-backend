@@ -130,8 +130,6 @@ export const deleteBus = async (req, res) => {
   }
 };
 
-
-
 export const updateBus = async (req, res) => {
   const { id } = req.params;
   const updates = req.body; // Destructure the entire body to allow flexible updates
@@ -161,7 +159,6 @@ export const updateBus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 export const updateSeatStatusOfBus = async (req, res) => {
   const { busId, seatsData } = req.body;
@@ -207,32 +204,36 @@ export const updateSeatStatusOfBus = async (req, res) => {
   }
 };
 
-
-
-
-
-
 // Get buses by adminId or email
 export const getBusesByAdminId = async (req, res) => {
-  const { adminId, email } = req.query; // Use query parameters for adminId or email
+  const { adminId, email } = req.query;
 
   try {
     let buses;
 
-    // If an email is provided, first fetch the adminId
+    // If an email is provided, fetch the adminId first
     if (email) {
-      const admin = await Admin.findOne({ email }); // Assuming the email field is unique
+      const admin = await Admin.findOne({ email });
       if (!admin) {
         return res.status(404).json({ message: "Admin not found" });
       }
-      buses = await Bus.find({ adminId: admin._id }); // Use the adminId from the found admin
+      buses = await Bus.find({ adminId: admin._id }).lean();
     } else if (adminId) {
-      // If adminId is provided directly, fetch buses using that
-      buses = await Bus.find({ adminId });
+      buses = await Bus.find({ adminId }).lean();
     } else {
       return res
         .status(400)
         .json({ message: "Either adminId or email must be provided" });
+    }
+
+    // Enrich each bus object with driverName
+    for (const bus of buses) {
+      if (bus.driverId) {
+        const driver = await Admin.findById(bus.driverId).select("name");
+        bus.driverName = driver ? driver.name : null;
+      } else {
+        bus.driverName = null;
+      }
     }
 
     res.status(200).json(buses);
@@ -242,7 +243,6 @@ export const getBusesByAdminId = async (req, res) => {
 };
 
 export const getBusesOnSearchFilters = async (req, res) => {
-
   try {
     const filters = req.body;
 
@@ -250,11 +250,11 @@ export const getBusesOnSearchFilters = async (req, res) => {
 
     // Define a mapping of non-nested keys to nested fields
     const nestedFieldsMapping = {
-      startCity: 'route.startCity',
-      endCity: 'route.endCity', 
-      busNumber: 'busDetails.busNumber',
-      engineNumber: 'busDetails.engineNumber',
-      actualPrice: 'fare.actualPrice',
+      startCity: "route.startCity",
+      endCity: "route.endCity",
+      busNumber: "busDetails.busNumber",
+      engineNumber: "busDetails.engineNumber",
+      actualPrice: "fare.actualPrice",
     };
 
     // Loop through filters and construct the query
@@ -273,14 +273,14 @@ export const getBusesOnSearchFilters = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Filtered buses retrieved successfully',
+      message: "Filtered buses retrieved successfully",
       data: buses,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching filtered buses',
+      message: "Error fetching filtered buses",
       error: error.message,
     });
   }
-}
+};

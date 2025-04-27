@@ -10,6 +10,7 @@ import {
   getDriversByAdminId,
   deleteDriver,
   getAdminsDataAnalytics,
+  getAdminDashboardAnalytics,
 } from "./adminController.js";
 import { authenticate, isSuperAdmin } from "../../middlewares/authenticate.js";
 import { loginValidationRules } from "../user/validation.js";
@@ -25,6 +26,9 @@ adminRouter.post("/login", loginValidationRules(), loginAdmin);
 // Private routes
 adminRouter.get("/profile", authenticate, getAdminProfile);
 adminRouter.put("/profile", authenticate, updateAdminProfile);
+
+adminRouter.get('/dashboard-analytics', getAdminDashboardAnalytics);
+
 
 // SuperAdmin only route
 // adminRouter.get("/", authenticate, getAllAdmins);

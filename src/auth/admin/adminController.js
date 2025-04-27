@@ -8,6 +8,8 @@ import Bus from "../../bus/busModel.js";
 import Route from "../../routes/routeModel.js";
 import BusEntity from "../../busEntity/busEntityModel.js";
 import Payment from "../../payment/paymentModel.js";
+import Ticket from "../../ticket/ticketModel.js";
+import mongoose from "mongoose";
 
 export const getNextAdminId = async () => {
   const lastAdmin = await Admin.findOne().sort({ adminId: -1 });
@@ -268,23 +270,29 @@ export const getDriverById = async (req, res, next) => {
   }
 };
 
-
 export const getAdminsDataAnalytics = async (req, res) => {
   try {
-
     const admins = await Admin.find({ role: "admin" });
 
     const response = await Promise.all(
       admins.map(async (admin) => {
         const busesCount = await Bus.countDocuments({ adminId: admin._id });
         const routesCount = await Route.countDocuments({ adminId: admin._id });
-        const vehiclesCount = await BusEntity.countDocuments({ adminId: admin._id });
-        const driversCount = await Admin.countDocuments({ role: "driver", companyId: admin._id });
+        const vehiclesCount = await BusEntity.countDocuments({
+          adminId: admin._id,
+        });
+        const driversCount = await Admin.countDocuments({
+          role: "driver",
+          companyId: admin._id,
+        });
         const payments = await Payment.find({
           adminId: admin._id,
           status: "succeeded",
         });
-        const totalRevenue = payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+        const totalRevenue = payments.reduce(
+          (sum, payment) => sum + (payment.amount || 0),
+          0
+        );
         return {
           adminId: admin._id,
           adminName: admin.name,
@@ -295,18 +303,104 @@ export const getAdminsDataAnalytics = async (req, res) => {
           revenue: totalRevenue,
         };
       })
-    )
+    );
     res.status(200).json({
       success: true,
       data: response,
     });
-
-
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Error fethcing admins data analytics",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
+};
+
+export const getAdminDashboardAnalytics = async (req, res, next) => {
+  try {
+    const { adminId } = req.query;
+
+    if (!adminId || typeof adminId !== "string") {
+      return res
+        .status(400)
+        .json({ error: "adminId is required in query params." });
+    }
+
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // Run all DB queries in parallel
+    const [
+      driversCount,
+      totalVehicles,
+      upcomingBuses,
+      totalRevenueAgg,
+      todaysRevenueAgg,
+      totalTicketsCount,
+      todaysTicketsCount,
+    ] = await Promise.all([
+      Admin.countDocuments({ role: "driver", companyId: adminId }),
+      BusEntity.countDocuments({ adminId }),
+      Bus.find({ adminId, date: { $gt: now } }).lean(), // only upcoming buses
+      Payment.aggregate([
+        {
+          $match: {
+            adminId: adminId,
+            status: "succeeded",
+          },
+        },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
+      Payment.aggregate([
+        {
+          $match: {
+            adminId: adminId,
+            status: "succeeded",
+            createdAt: { $gte: todayStart, $lte: todayEnd },
+          },
+        },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
+      Ticket.countDocuments({ adminId }),
+      Ticket.countDocuments({
+        adminId,
+        issueDate: { $gte: todayStart, $lte: todayEnd },
+      }),
+    ]);
+
+    // Use same filter for today's shuttles (from the upcoming list)
+    const todaysBuses = upcomingBuses.filter((bus) => {
+      const busDate = new Date(bus.date);
+      return busDate >= todayStart && busDate <= todayEnd;
+    });
+
+    // Count unique driverIds from upcoming buses only
+    const assignedDriverIds = new Set(
+      upcomingBuses.map((bus) => bus.driverId?.toString()).filter(Boolean)
+    );
+
+    const assignedDrivers = assignedDriverIds.size;
+
+    const totalRevenue = totalRevenueAgg[0]?.total || 0;
+    const todaysRevenue = todaysRevenueAgg[0]?.total || 0;
+
+    res.json({
+      driversRegistered: driversCount,
+      totalVehicles,
+      todaysShuttles: todaysBuses.length,
+      totalRevenue,
+      todaysRevenue,
+      totalTickets: totalTicketsCount,
+      todaysTickets: todaysTicketsCount,
+      assignedDrivers,
+    });
+  } catch (error) {
+    console.error("Dashboard Error:", error);
+    return next({ status: 500, message: error.message });
+  }
+};
