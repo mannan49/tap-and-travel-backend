@@ -193,18 +193,32 @@ export const updateSeatStatusOfBus = async (req, res) => {
       }
 
       // Update the seat's details
-      seat.booked = booked ?? true; // Defaults to true if not provided
-      seat.email = email || seat.email; // Updates email if provided
-      seat.gender = gender || seat.gender; // Updates gender if provided
+      seat.booked = booked ?? true;
+      seat.email = email || seat.email;
+      seat.gender = gender || seat.gender;
 
-      // Update the neighbor seat's neighborGender
-      if (seat.neighborSeatNumber !== null) {
-        const neighborSeatIndex = parseInt(seat.neighborSeatNumber, 10); // Get the neighbor seat's index
-        const neighborSeat = bus.seats[neighborSeatIndex]; // Access the neighbor seat object
+      const parts = seat.seatNumber.split("-");
+      const seatIndex = parseInt(parts[1], 10);
 
-        if (neighborSeat) {
-          neighborSeat.neighborGender = gender || neighborSeat.neighborGender; // Update neighbor's neighborGender
-        }
+      if (
+        seat.neighborSeatNumber === null ||
+        seat.neighborSeatNumber === undefined
+      ) {
+        const neighborIndex =
+          seatIndex % 2 === 0 ? seatIndex - 1 : seatIndex + 1;
+        seat.neighborSeatNumber = neighborIndex.toString();
+      }
+
+      const neighborSeat = bus.seats.find((s) => {
+        const neighborParts = s.seatNumber.split("-");
+        return (
+          parseInt(neighborParts[1], 10) ===
+          parseInt(seat.neighborSeatNumber, 10)
+        );
+      });
+
+      if (neighborSeat) {
+        neighborSeat.neighborGender = gender || neighborSeat.neighborGender;
       }
 
       updatedSeats.push(seat); // Add updated seat to the array
