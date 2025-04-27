@@ -140,6 +140,10 @@ export const getTicketInformation = async (req, res, next) => {
           throw new Error("Missing related information for ticket.");
         }
 
+        const seatDetails = bus.seats.find(
+          (seat) => seat.seatNumber === ticket.seatNumber
+        );
+
         return {
           userId: user._id,
           busId: bus._id,
@@ -154,6 +158,7 @@ export const getTicketInformation = async (req, res, next) => {
           arrivalTime: bus?.arrivalTime,
           busCapacity: bus.capacity,
           seatNumber: ticket.seatNumber,
+          seatDetails: seatDetails || null,
           date: ticket.travelDate,
         };
       })
