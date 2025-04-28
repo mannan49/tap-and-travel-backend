@@ -1,10 +1,11 @@
 import { validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { jwtDecode } from "jwt-decode";
 import User from "./userModel.js";
 import config from "../../config/index.js";
 import { sendOTP } from "../otp/OTPVerificationController.js";
+import { generateSecretKey } from "../../helpers/generateSecretKey.js";
+import { transporter } from "../../helpers/transporter.js";
 
 const getNextUserId = async () => {
   try {
@@ -329,6 +330,121 @@ const getUserById = async (req, res, next) => {
   }
 };
 
+const sendForgotPasswordOtp = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return next({ status: 404, message: "User not found" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const secretKey = generateSecretKey();
+    const now = new Date();
+
+    user.forgotPasswordOtp = {
+      otp,
+      expired: false,
+      verified: false,
+      createdAt: now,
+      updatedAt: now,
+      secret_key: secretKey,
+    };
+
+    await user.save();
+
+    await transporter.sendMail({
+      from: config.AUTH_EMAIL,
+      to: email,
+      subject: "Your OTP Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
+          <h2 style="color: #333;">Your OTP Code</h2>
+          <p style="font-size: 16px;">Use the following OTP to complete your verification. It is valid for <strong>10 minutes</strong>.</p>
+          <p style="font-size: 24px; font-weight: bold; color: #d32f2f; border: 2px dashed #d32f2f; display: inline-block; padding: 10px 20px; margin-top: 10px;">
+            ${otp}
+          </p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+    });
+
+    res.status(200).json({ message: "OTP sent to your email" });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+const verifyForgotPasswordOtp = async (req, res, next) => {
+  try {
+    const { userId, otp } = req.body;
+
+    const user = await User.findOne({ userId });
+    if (!user) return next({ status: 404, message: "User not found" });
+
+    const forgotOtp = user?.forgotPasswordOtp;
+    if (!forgotOtp || forgotOtp.expired) {
+      return next({ status: 400, message: "Invalid OTP" });
+    }
+
+    const now = new Date();
+    const otpExpirationTime = new Date(
+      forgotOtp.createdAt.getTime() + 10 * 60000
+    );
+
+    if (now > otpExpirationTime) {
+      forgotOtp.expired = true;
+      await user.save();
+      return next({ status: 400, message: "OTP expired" });
+    }
+
+    if (forgotOtp.otp !== otp) {
+      return next({ status: 400, message: "Invalid OTP" });
+    }
+
+    forgotOtp.verified = true;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ message: "OTP verified", secret_key: forgotOtp.secret_key });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+const resetPasswordAfterOtp = async (req, res, next) => {
+  try {
+    const { userId, secret_key, newPassword } = req.body;
+
+    const user = await User.findOne({ userId });
+    if (!user) return next({ status: 404, message: "User not found" });
+
+    const forgotOtp = user.forgotPasswordOtp;
+    if (
+      !forgotOtp ||
+      !forgotOtp.verified ||
+      forgotOtp.secret_key !== secret_key
+    ) {
+      return next({
+        status: 400,
+        message: "Invalid secret key or OTP not verified",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+
+    // Clear the forgotPasswordOtp field
+    user.forgotPasswordOtp = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successfully" });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
 export {
   updateProfile,
   changePassword,
@@ -340,4 +456,7 @@ export {
   addRfidCardNumber,
   deleteRfidCardNumber,
   getRfidCardNumber,
+  sendForgotPasswordOtp,
+  verifyForgotPasswordOtp,
+  resetPasswordAfterOtp,
 };
