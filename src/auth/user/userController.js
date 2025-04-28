@@ -378,7 +378,7 @@ const verifyForgotPasswordOtp = async (req, res, next) => {
   try {
     const { userId, otp } = req.body;
 
-    const user = await User.findOne({ userId });
+    const user = await User.findOne({ _id: userId });
     if (!user) return next({ status: 404, message: "User not found" });
 
     const forgotOtp = user?.forgotPasswordOtp;
@@ -416,7 +416,7 @@ const resetPasswordAfterOtp = async (req, res, next) => {
   try {
     const { userId, secret_key, newPassword } = req.body;
 
-    const user = await User.findOne({ userId });
+    const user = await User.findOne({ _id: userId });
     if (!user) return next({ status: 404, message: "User not found" });
 
     const forgotOtp = user.forgotPasswordOtp;
@@ -427,7 +427,7 @@ const resetPasswordAfterOtp = async (req, res, next) => {
     ) {
       return next({
         status: 400,
-        message: "Invalid secret key or OTP not verified",
+        message: "Sorry! Your OTP is not verified",
       });
     }
 
