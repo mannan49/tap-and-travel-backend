@@ -20,7 +20,6 @@ import {
   passwordValidationRules,
 } from "./validation.js";
 import { resendOTP, verifyOTP } from "../otp/OTPVerificationController.js";
-import { authenticate } from "../../middlewares/authenticate.js";
 
 const userRouter = express.Router();
 
@@ -39,16 +38,8 @@ userRouter.post("/change-password", passwordValidationRules(), changePassword);
 userRouter.post("/verify-password", verifyPassword);
 userRouter.get("/:id", getUserById);
 
-userRouter.post(
-  "/forgot-password/send-otp",
-  authenticate,
-  sendForgotPasswordOtp
-);
-userRouter.post(
-  "/forgot-password/verify-otp",
-  authenticate,
-  verifyForgotPasswordOtp
-);
-userRouter.post("/forgot-password/reset", authenticate, resetPasswordAfterOtp);
+userRouter.post("/forgot-password/send-otp", sendForgotPasswordOtp);
+userRouter.post("/forgot-password/verify-otp", verifyForgotPasswordOtp);
+userRouter.post("/forgot-password/reset", resetPasswordAfterOtp);
 
 export default userRouter;
