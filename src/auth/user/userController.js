@@ -355,15 +355,29 @@ const sendForgotPasswordOtp = async (req, res, next) => {
     await transporter.sendMail({
       from: config.AUTH_EMAIL,
       to: email,
-      subject: "Your OTP Code",
+      subject: "Forgot Password OTP",
       html: `
-        <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
-          <h2 style="color: #333;">Your OTP Code</h2>
-          <p style="font-size: 16px;">Use the following OTP to complete your verification. It is valid for <strong>10 minutes</strong>.</p>
-          <p style="font-size: 24px; font-weight: bold; color: #d32f2f; border: 2px dashed #d32f2f; display: inline-block; padding: 10px 20px; margin-top: 10px;">
-            ${otp}
-          </p>
-          <p>If you did not request this, please ignore this email.</p>
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f4f4f5;">
+          <div style="max-width: 500px; margin: auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h2 style="color: #1e293b; margin-bottom: 10px;">Tap & Travel</h2>
+            <p style="color: #475569; font-size: 18px; margin-bottom: 20px;">Enter this OTP to complete your verification</p>
+    
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+              ${otp
+                .split("")
+                .map(
+                  (digit) => `
+                <div style="width: 40px; height: 50px; border: 2px solid #1e293b; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #1e293b;">
+                  ${digit}
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+    
+            <p style="color: #64748b; font-size: 14px;">This code is valid for <strong>10 minutes</strong>.</p>
+            <p style="color: #64748b; font-size: 12px; margin-top: 20px;">If you didn't request this, you can safely ignore this email.</p>
+          </div>
         </div>
       `,
     });
@@ -376,9 +390,9 @@ const sendForgotPasswordOtp = async (req, res, next) => {
 
 const verifyForgotPasswordOtp = async (req, res, next) => {
   try {
-    const { userId, otp } = req.body;
+    const { email, otp } = req.body;
 
-    const user = await User.findOne({ _id: userId });
+    const user = await User.findOne({ email });
     if (!user) return next({ status: 404, message: "User not found" });
 
     const forgotOtp = user?.forgotPasswordOtp;
@@ -404,9 +418,10 @@ const verifyForgotPasswordOtp = async (req, res, next) => {
     forgotOtp.verified = true;
     await user.save();
 
-    res
-      .status(200)
-      .json({ message: "OTP verified", secret_key: forgotOtp.secret_key });
+    res.status(200).json({
+      message: "Congratulations! OTP verified!",
+      secret_key: forgotOtp.secret_key,
+    });
   } catch (err) {
     return next({ status: 500, message: err.message });
   }
@@ -414,9 +429,9 @@ const verifyForgotPasswordOtp = async (req, res, next) => {
 
 const resetPasswordAfterOtp = async (req, res, next) => {
   try {
-    const { userId, secret_key, newPassword } = req.body;
+    const { email, secret_key, newPassword } = req.body;
 
-    const user = await User.findOne({ _id: userId });
+    const user = await User.findOne({ email });
     if (!user) return next({ status: 404, message: "User not found" });
 
     const forgotOtp = user.forgotPasswordOtp;
@@ -435,7 +450,7 @@ const resetPasswordAfterOtp = async (req, res, next) => {
     user.password = hashedPassword;
 
     // Clear the forgotPasswordOtp field
-    user.forgotPasswordOtp = undefined;
+    user.forgotPasswordOtp.expired = true;
 
     await user.save();
 
