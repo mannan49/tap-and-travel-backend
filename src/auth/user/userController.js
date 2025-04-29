@@ -96,7 +96,6 @@ const addUser = async (req, res, next) => {
   }
 };
 
-
 export const verifySignupOtp = async (req, res, next) => {
   const { email, otp } = req.body;
 
@@ -135,7 +134,6 @@ export const verifySignupOtp = async (req, res, next) => {
     return next({ status: 500, message: err.message });
   }
 };
-
 
 export const resendSignupOtp = async (req, res, next) => {
   const { email } = req.body;

@@ -14,6 +14,7 @@ import {
   updateProfile,
   verifyForgotPasswordOtp,
   verifyPassword,
+  verifySignupOtp,
 } from "./userController.js";
 import {
   userValidationRules,
