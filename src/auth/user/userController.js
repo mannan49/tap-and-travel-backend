@@ -3,9 +3,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "./userModel.js";
 import config from "../../config/index.js";
-import { sendOTP } from "../otp/OTPVerificationController.js";
 import { generateSecretKey } from "../../helpers/generateSecretKey.js";
 import { transporter } from "../../helpers/transporter.js";
+import { generateOTP } from "../../helpers/generateOTP.js";
 
 const getNextUserId = async () => {
   try {
@@ -42,6 +42,9 @@ const addUser = async (req, res, next) => {
     } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
     const newUser = new User({
       userId: await getNextUserId(),
       name,
@@ -52,18 +55,38 @@ const addUser = async (req, res, next) => {
       travelHistory,
       paymentInformation,
       verified: false,
+      signupOtp: {
+        otp,
+        expiresAt,
+      },
     });
 
     // Save the user to the database
     const savedUser = await newUser.save();
 
-    // Call the sendOTP function to send an OTP to the user's email
-    await sendOTP(req, res);
+    await transporter.sendMail({
+      from: config.AUTH_EMAIL,
+      to: email,
+      subject: "Signup OTP",
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f4f4f5;">
+          <div style="max-width: 500px; margin: auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h2 style="color: #1e293b; margin-bottom: 10px;">Tap & Travel</h2>
+            <p style="color: #475569; font-size: 18px; margin-bottom: 20px;">Enter this OTP to complete your verification</p>
+            <div style="display: flex; justify-content: center; background: #f1f5f9; border: 2px solid #1e293b; border-radius: 12px; padding: 15px 20px; font-size: 32px; font-weight: bold; letter-spacing: 12px; color: #1e293b; margin-bottom: 20px;">
+              ${otp}
+            </div>
+            <p style="color: #64748b; font-size: 14px;">This code is valid for <strong>10 minutes</strong>.</p>
+            <p style="color: #64748b; font-size: 12px; margin-top: 20px;">If you didn't request this, you can safely ignore this email.</p>
+          </div>
+        </div>
+      `,
+    });
 
     // Response without JWT until OTP is verified
     return res.status(201).json({
       message: "OTP sent to your email for verification",
-      user: newUser,
+      userId: savedUser._id,
     });
   } catch (err) {
     if (err.name === "MongoError" && err.code === 11000) {
@@ -72,6 +95,109 @@ const addUser = async (req, res, next) => {
     return next({ status: 500, message: err.message });
   }
 };
+
+
+export const verifySignupOtp = async (req, res, next) => {
+  const { email, otp } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user || !user.signupOtp || user.signupOtp.verified) {
+      return next({ status: 400, message: "Invalid or already verified" });
+    }
+
+    if (user.signupOtp.expired || new Date() > user.signupOtp.expiresAt) {
+      return next({ status: 400, message: "OTP expired" });
+    }
+
+    if (user.signupOtp.otp !== otp) {
+      return next({ status: 400, message: "Invalid OTP" });
+    }
+
+    user.verified = true;
+    user.signupOtp.verified = true;
+    user.signupOtp.expired = true;
+    await user.save();
+
+    // Generate JWT
+    const token = jwt.sign(
+      { sub: user._id, role: "user", name: user.name, email: user.email },
+      config.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      message: `Welcome ${user.name.toUpperCase()} to Tap & Travel.`,
+      token,
+    });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+
+export const resendSignupOtp = async (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return next({ status: 400, message: "Email is required" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return next({ status: 404, message: "User not found" });
+    }
+
+    if (user.verified) {
+      return next({ status: 400, message: "User already verified" });
+    }
+
+    const otp = generateOTP();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000); // 10 mins
+
+    user.signupOtp = {
+      otp,
+      expiresAt,
+      createdAt: now,
+      updatedAt: now,
+      expired: false,
+      verified: false,
+    };
+
+    await user.save();
+
+    await transporter.sendMail({
+      from: config.AUTH_EMAIL,
+      to: email,
+      subject: "Resend OTP - Tap & Travel",
+      html: `
+      <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f4f4f5;">
+        <div style="max-width: 500px; margin: auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h2 style="color: #1e293b; margin-bottom: 10px;">Tap & Travel</h2>
+          <p style="color: #475569; font-size: 18px; margin-bottom: 20px;">Here is your new OTP to complete verification</p>
+          <div style="display: flex; justify-content: center; background: #f1f5f9; border: 2px solid #1e293b; border-radius: 12px; padding: 15px 20px; font-size: 32px; font-weight: bold; letter-spacing: 12px; color: #1e293b; margin-bottom: 20px;">
+            ${otp}
+          </div>
+          <p style="color: #64748b; font-size: 14px;">This code is valid for <strong>10 minutes</strong>.</p>
+          <p style="color: #64748b; font-size: 12px; margin-top: 20px;">If you didn't request this, you can safely ignore this email.</p>
+        </div>
+      </div>
+      `,
+    });
+
+    return res.status(200).json({
+      message: "OTP resent successfully to your email.",
+    });
+  } catch (err) {
+    return next({ status: 500, message: err.message });
+  }
+};
+
+
 
 const loginUser = async (req, res, next) => {
   try {
@@ -85,6 +211,9 @@ const loginUser = async (req, res, next) => {
     }
     if (!user) {
       return next({ status: 401, message: "Invalid credentials" });
+    }
+    if (!user.verified) {
+      return next({ status: 401, message: "Your Account Is Not Verified" });
     }
 
     const token = jwt.sign(
@@ -428,6 +557,7 @@ const resetPasswordAfterOtp = async (req, res, next) => {
     const forgotOtp = user.forgotPasswordOtp;
     if (
       !forgotOtp ||
+      forgotOtp?.expired ||
       !forgotOtp.verified ||
       forgotOtp.secret_key !== secret_key
     ) {

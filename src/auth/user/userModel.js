@@ -42,6 +42,14 @@ const userSchema = new mongoose.Schema({
     default: "pending",
     enum: ["pending", "booked", "delivered"],
   },
+  signupOtp: {
+    otp: { type: String },
+    expired: { type: Boolean, default: false },
+    verified: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date },
+  },
   forgotPasswordOtp: {
     otp: { type: String },
     expired: { type: Boolean, default: false },

@@ -8,6 +8,7 @@ import {
   getRfidCardNumber,
   getUserById,
   loginUser,
+  resendSignupOtp,
   resetPasswordAfterOtp,
   sendForgotPasswordOtp,
   updateProfile,
@@ -19,7 +20,6 @@ import {
   loginValidationRules,
   passwordValidationRules,
 } from "./validation.js";
-import { resendOTP, verifyOTP } from "../otp/OTPVerificationController.js";
 
 const userRouter = express.Router();
 
@@ -27,8 +27,8 @@ userRouter.get("/req", getAllUsers);
 userRouter.post("/register", userValidationRules(), addUser);
 userRouter.post("/login", loginValidationRules(), loginUser);
 
-userRouter.post("/verify-otp", verifyOTP);
-userRouter.post("/resend-otp", resendOTP);
+userRouter.post("/verify-otp", verifySignupOtp);
+userRouter.post("/resend-otp", resendSignupOtp);
 
 userRouter.post("/rfid-add", addRfidCardNumber);
 userRouter.get("/rfid-get", getRfidCardNumber);
