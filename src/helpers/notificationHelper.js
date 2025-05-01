@@ -2,8 +2,9 @@ import { initializeApp, applicationDefault, getApps } from "firebase-admin/app";
 import { getMessaging } from "firebase-admin/messaging";
 
 if (!getApps().length) {
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
   initializeApp({
-    credential: applicationDefault(),
+    credential: admin.credential.cert(serviceAccount),
   });
 }
 
