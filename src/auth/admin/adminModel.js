@@ -6,7 +6,7 @@ const AdminSchema = new mongoose.Schema(
     adminId: {
       type: Number,
       unique: true,
-      required: true,
+      required: false,
       index: true,
     },
     name: {

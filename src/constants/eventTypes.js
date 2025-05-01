@@ -10,6 +10,7 @@ const EventTypes = {
   ADMIN_ADD_ROUTE: "AdminAddRoute",
   ADMIN_ADD_BUS: "AdminAddBus",
   ADMIN_ADD_DRIVER: "AdminAddDriver",
+  ADMIN_UPDATE_DRIVER: "AdminUpdateDriver",
   ADMIN_ADD_VEHICLE: "AdminAddVehicle",
 
   // Super Admin Events
