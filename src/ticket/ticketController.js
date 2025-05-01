@@ -2,6 +2,18 @@ import Ticket from "./ticketModel.js";
 import Bus from "../bus/busModel.js";
 import User from "../auth/user/userModel.js";
 import Admin from "../auth/admin/adminModel.js";
+import { sendPushNotification } from "../helpers/notificationHelper.js";
+
+const notifyUserOnBooking = async (userId, bus) => {
+  const user = await User.findById(userId);
+  if (user?.fcmToken) {
+    await sendPushNotification(
+      user.fcmToken,
+      "Booking Confirmed",
+      `Your seat for ${bus?.route?.startCity} to ${bus?.route?.endCity} is booked.`
+    );
+  }
+};
 
 // Generate new ticket
 export const generateTickets = async (req, res, next) => {
@@ -54,6 +66,7 @@ export const generateTickets = async (req, res, next) => {
       });
       const savedTicket = await newTicket.save();
       createdTickets.push(savedTicket);
+      await notifyUserOnBooking(userId, bus);
     }
 
     return res.status(201).json({ tickets: createdTickets });

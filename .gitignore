@@ -4,6 +4,8 @@ node_modules/
 # Ignore environment variable files
 .env
 
+firebase-service-account.json
+
 # Ignore log files
 *.log
 
