@@ -595,6 +595,17 @@ const resetPasswordAfterOtp = async (req, res, next) => {
   }
 };
 
+const saveFcmToken = async (req, res) => {
+  const { userId, fcmToken } = req.body;
+
+  try {
+    await User.findByIdAndUpdate(userId, { fcmToken });
+    res.status(200).json({ message: "Token saved successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to save token" });
+  }
+};
+
 export {
   updateProfile,
   changePassword,
@@ -609,4 +620,5 @@ export {
   sendForgotPasswordOtp,
   verifyForgotPasswordOtp,
   resetPasswordAfterOtp,
+  saveFcmToken
 };

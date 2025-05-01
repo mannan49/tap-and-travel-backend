@@ -42,6 +42,7 @@ const userSchema = new mongoose.Schema({
     default: "pending",
     enum: ["pending", "booked", "delivered"],
   },
+  fcmToken: String,
   signupOtp: {
     otp: { type: String },
     expired: { type: Boolean, default: false },

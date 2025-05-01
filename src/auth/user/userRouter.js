@@ -10,6 +10,7 @@ import {
   loginUser,
   resendSignupOtp,
   resetPasswordAfterOtp,
+  saveFcmToken,
   sendForgotPasswordOtp,
   updateProfile,
   verifyForgotPasswordOtp,
@@ -42,5 +43,6 @@ userRouter.get("/:id", getUserById);
 userRouter.post("/forgot-password/send-otp", sendForgotPasswordOtp);
 userRouter.post("/forgot-password/verify-otp", verifyForgotPasswordOtp);
 userRouter.post("/forgot-password/reset", resetPasswordAfterOtp);
+userRouter.post("/save-token", saveFcmToken);
 
 export default userRouter;
