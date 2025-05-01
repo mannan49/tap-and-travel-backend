@@ -7,6 +7,7 @@ import { generateSecretKey } from "../../helpers/generateSecretKey.js";
 import { transporter } from "../../helpers/transporter.js";
 import { generateOTP } from "../../helpers/generateOTP.js";
 import { getOtpEmailTemplate } from "../../helpers/get-otp-email-template.js";
+import EventTypes from "../../constants/eventTypes.js";
 
 const getNextUserId = async () => {
   try {
@@ -144,6 +145,11 @@ export const verifySignupOtp = async (req, res, next) => {
       { expiresIn: "7d" }
     );
 
+    res.locals.logEvent = {
+      eventName: EventTypes.USER_SIGNUP,
+      payload: user,
+    };
+
     return res.status(200).json({
       message: `Welcome ${user.name.toUpperCase()} to Tap & Travel.`,
       token,
@@ -237,6 +243,11 @@ const loginUser = async (req, res, next) => {
       { expiresIn: "7d" }
     );
 
+    res.locals.logEvent = {
+      eventName: EventTypes.USER_LOGIN,
+      payload: user,
+    };
+
     return res.status(200).json({
       message: `Welcome ${user.name.toUpperCase()} to Tap & Travel.`,
       token,
@@ -286,6 +297,11 @@ const addRfidCardNumber = async (req, res, next) => {
       return next({ status: 404, message: "User not found" });
     }
 
+    res.locals.logEvent = {
+      eventName: EventTypes.SUPERADMIN_DELIVER_RFID,
+      payload: user,
+    };
+
     return res.status(200).json({
       message: "RFID card number updated successfully",
       user,
@@ -314,6 +330,11 @@ const deleteRfidCardNumber = async (req, res, next) => {
     if (!user) {
       return next({ status: 404, message: "User not found" });
     }
+
+    res.locals.logEvent = {
+      eventName: EventTypes.SUPERADMIN_DELETED_RFID,
+      payload: user,
+    };
 
     return res.status(200).json({
       message: "RFID card number deleted successfully",
@@ -590,6 +611,11 @@ const resetPasswordAfterOtp = async (req, res, next) => {
     user.forgotPasswordOtp.expired = true;
 
     await user.save();
+
+    res.locals.logEvent = {
+      eventName: EventTypes.USER_RESET_PASSWORD,
+      payload: user,
+    };
 
     res.status(200).json({ message: "Password reset successfully" });
   } catch (err) {

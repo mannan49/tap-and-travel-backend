@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
 
 const eventLogSchema = new mongoose.Schema({
+  eventName: { type: String, required: true },
   userId: { type: mongoose.Schema.Types.Mixed },
+  payload: mongoose.Schema.Types.Mixed,
   method: String,
   route: String,
   token: String,

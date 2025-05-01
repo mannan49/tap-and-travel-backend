@@ -32,9 +32,6 @@ export const generateNotification = async (req, res, next) => {
 // Generate new ticket
 export const generateTickets = async (req, res, next) => {
   const { tickets } = req.body;
-
-  console.log("Req", req.body);
-
   try {
     const createdTickets = [];
 
@@ -83,7 +80,10 @@ export const generateTickets = async (req, res, next) => {
       await notifyUserOnBooking(userId, bus);
       await scheduleNotification(user, bus);
     }
-
+    res.locals.logEvent = {
+      eventName: "TicketBooked",
+      payload: tickets, 
+    };
     return res.status(201).json({ tickets: createdTickets });
   } catch (err) {
     return next({ status: 500, message: err.message });

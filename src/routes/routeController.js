@@ -1,3 +1,4 @@
+import EventTypes from "../constants/eventTypes.js";
 import Route from "./routeModel.js";
 
 // Get all routes
@@ -47,6 +48,11 @@ export const createRoute = async (req, res) => {
     });
 
     await newRoute.save();
+
+    res.locals.logEvent = {
+      eventName: EventTypes.ADMIN_ADD_ROUTE,
+      payload: newRoute,
+    };
 
     res.status(201).json({
       message: "Route has been added successfully!",

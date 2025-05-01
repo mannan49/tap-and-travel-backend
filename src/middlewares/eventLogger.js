@@ -23,6 +23,8 @@ export const logEvent = async (req, res, next) => {
   }
 
   res.on("finish", async () => {
+    const logTrigger = res.locals.logEvent;
+    if (!logTrigger?.eventName) return;
     const responseTime = Date.now() - start;
     const statusCode = res.statusCode;
 
@@ -51,6 +53,8 @@ export const logEvent = async (req, res, next) => {
       platform,
       timestamp,
       time,
+      eventName: logTrigger.eventName,
+      payload: logTrigger.payload,
     };
 
     try {

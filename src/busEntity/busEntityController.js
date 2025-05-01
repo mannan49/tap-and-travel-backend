@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import BusEntity from "./busEntityModel.js";
 import Admin from "../auth/admin/adminModel.js";
+import EventTypes from "../constants/eventTypes.js";
 
 // Create a new BusEntity
 export const createBusEntity = async (req, res) => {
@@ -28,6 +29,11 @@ export const createBusEntity = async (req, res) => {
     });
 
     await newBusEntity.save();
+
+    res.locals.logEvent = {
+      eventName: EventTypes.ADMIN_ADD_VEHICLE,
+      payload: newBusEntity,
+    };
 
     res.status(201).json({
       message: "Bus entity added successfully",

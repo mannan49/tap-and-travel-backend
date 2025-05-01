@@ -3,6 +3,7 @@ import Admin from "../auth/admin/adminModel.js";
 import BusEntity from "../busEntity/busEntityModel.js";
 import Route from "../routes/routeModel.js";
 import Bus from "./busModel.js";
+import EventTypes from "../constants/eventTypes.js";
 
 function generateComplexSeatNumber(baseNumber) {
   const timestampPart = Date.now().toString().slice(-8); // Last 8 digits of the timestamp
@@ -76,6 +77,10 @@ export const addBus = async (req, res) => {
     });
 
     const createdBus = await bus.save();
+    res.locals.logEvent = {
+      eventName: EventTypes.ADMIN_ADD_BUS,
+      payload: createdBus,
+    };
     res.status(201).json({
       message: "Bus has been added!",
       id: createdBus._id,
