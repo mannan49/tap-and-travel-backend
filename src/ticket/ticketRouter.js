@@ -4,6 +4,7 @@ import {
   getTicketsForUser,
   cancelTicket,
   getTicketInformation,
+  generateNotification,
 } from "./ticketController.js";
 import { authenticate } from "../middlewares/authenticate.js";
 
@@ -15,6 +16,7 @@ ticketRouter.post("/generate", generateTickets);
 // Get all tickets for a user (Authenticated users)
 ticketRouter.get("/user/:userId", getTicketsForUser);
 ticketRouter.post("/user/information", getTicketInformation);
+ticketRouter.post("/notification", generateNotification);
 
 ticketRouter.get(
   "/user/information/:userId",

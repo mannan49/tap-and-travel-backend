@@ -3,6 +3,7 @@ import Bus from "../bus/busModel.js";
 import User from "../auth/user/userModel.js";
 import Admin from "../auth/admin/adminModel.js";
 import { sendPushNotification } from "../helpers/notificationHelper.js";
+import { scheduleNotification } from "../helpers/scheduler.js";
 
 const notifyUserOnBooking = async (userId, bus) => {
   const user = await User.findById(userId);
@@ -12,6 +13,19 @@ const notifyUserOnBooking = async (userId, bus) => {
       "Booking Confirmed",
       `Your seat for ${bus?.route?.startCity} to ${bus?.route?.endCity} is booked.`
     );
+  }
+};
+
+export const generateNotification = async (req, res, next) => {
+  const { userId } = req.body;
+  const user = await User.findById(userId);
+  try {
+    if (user?.fcmToken) {
+      await sendPushNotification(user.fcmToken, "Booking Confirmed Bhai");
+    }
+    return res.status(201).json({ message: "Notification Sent" });
+  } catch (error) {
+    return next({ status: 500, message: error.message });
   }
 };
 
@@ -67,6 +81,7 @@ export const generateTickets = async (req, res, next) => {
       const savedTicket = await newTicket.save();
       createdTickets.push(savedTicket);
       await notifyUserOnBooking(userId, bus);
+      await scheduleNotification(user, bus);
     }
 
     return res.status(201).json({ tickets: createdTickets });
@@ -137,7 +152,7 @@ export const getTicketInformation = async (req, res, next) => {
     const tickets = await Ticket.find(ticketQuery);
     if (!tickets.length) {
       return res
-        .status(404)
+        .status(201)
         .json({ message: "No tickets found for this user." });
     }
 

@@ -18,12 +18,15 @@ import routeRouter from "./src/routes/routeRouter.js";
 import driverRouter from "./src/auth/driver/driverRouter.js";
 import busEntityRouter from "./src/busEntity/busEntityRouter.js";
 import paymentRouter from "./src/payment/paymentRouter.js";
+import { logEvent } from "./src/middlewares/eventLogger.js";
+import agenda from "./agenda.js";
 
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(logEvent);
 const corsOptions = {
   origin: true,
   methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
@@ -32,10 +35,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-connectDB();
-
-// Use the generated Swagger JSON file with Swagger UI
-// app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 // API routes
 app.use("/api/v1/admin", adminRouter);
@@ -56,23 +55,17 @@ app.get("/", (req, res) => {
 // Global error handler
 app.use(globalErrorHandler);
 
-const server = http.createServer(app);
-
-app.post("/api/validate-rfid", (req, res) => {
-  const { uid } = req.body;
-
-  // Validate the UID (you can replace this with database logic)
-  if (uid === scannedUID) {
-    res.json({ status: "success", message: "Access Granted!" });
-  } else {
-    res.json({ status: "error", message: "Invalid UID!" });
-  }
-});
-
-// Initialize WebSocket
-initializeWebSocket(server);
-
-// Start server
-server.listen(port, () => {
-  console.log(`Server running at ${port}`);
-});
+connectDB()
+  .then(() => {
+    agenda.start().then(() => {
+      console.log("✅ Agenda started");
+      const server = http.createServer(app);
+      initializeWebSocket(server);
+      server.listen(port, () => {
+        console.log(`🚀 Server running at ${port}`);
+      });
+    });
+  })
+  .catch((err) => {
+    console.error("❌ Failed to start server:", err);
+  });
