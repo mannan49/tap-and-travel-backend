@@ -147,6 +147,7 @@ export const verifySignupOtp = async (req, res, next) => {
     return res.status(200).json({
       message: `Welcome ${user.name.toUpperCase()} to Tap & Travel.`,
       token,
+      userId: user._id,
     });
   } catch (err) {
     return next({ status: 500, message: err.message });
@@ -239,6 +240,7 @@ const loginUser = async (req, res, next) => {
     return res.status(200).json({
       message: `Welcome ${user.name.toUpperCase()} to Tap & Travel.`,
       token,
+      userId: user._id,
     });
   } catch (err) {
     return next({ status: 500, message: err.message });
@@ -620,5 +622,5 @@ export {
   sendForgotPasswordOtp,
   verifyForgotPasswordOtp,
   resetPasswordAfterOtp,
-  saveFcmToken
+  saveFcmToken,
 };
