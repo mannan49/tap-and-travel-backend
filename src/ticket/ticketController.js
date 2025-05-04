@@ -3,7 +3,10 @@ import Bus from "../bus/busModel.js";
 import User from "../auth/user/userModel.js";
 import Admin from "../auth/admin/adminModel.js";
 import { sendPushNotification } from "../helpers/notificationHelper.js";
-import { scheduleNotification, scheduleRouteStopNotifications } from "../helpers/scheduler.js";
+import {
+  scheduleNotification,
+  scheduleRouteStopNotifications,
+} from "../helpers/scheduler.js";
 
 const notifyUserOnBooking = async (userId, bus) => {
   const user = await User.findById(userId);
@@ -182,19 +185,9 @@ export const getTicketInformation = async (req, res, next) => {
           Bus.findById(ticket?.busId),
         ]);
 
-        if (!user || !admin || !bus) {
-          console.log("Missing data for ticket:", {
-            ticketId: ticket._id,
-            userFound: !!user,
-            adminFound: !!admin,
-            busFound: !!bus,
-          });
+        if (!user && !admin && !bus) {
           throw new Error("Missing related information for ticket.");
         }
-
-        // if (!user || !admin || !bus) {
-        //   throw new Error("Missing related information for ticket.");
-        // }
 
         const seatDetails = bus.seats.find(
           (seat) => seat.seatNumber === ticket.seatNumber
@@ -202,21 +195,21 @@ export const getTicketInformation = async (req, res, next) => {
 
         return {
           _id: ticket?._id,
-          userId: user._id,
-          busId: bus._id,
-          adminId: admin._id,
-          user: user.name,
-          phoneNumber: user.phoneNumber,
+          userId: user?._id,
+          busId: bus?._id,
+          adminId: admin?._id,
+          user: user?.name,
+          phoneNumber: user?.phoneNumber,
           adminName: admin?.company,
           route: bus?.route,
           fare: bus?.fare,
           busDetails: bus?.busDetails,
           departureTime: bus?.departureTime,
           arrivalTime: bus?.arrivalTime,
-          busCapacity: bus.capacity,
-          seatNumber: ticket.seatNumber,
+          busCapacity: bus?.capacity,
+          seatNumber: ticket?.seatNumber,
           seatDetails: seatDetails || null,
-          date: ticket.travelDate,
+          date: ticket?.travelDate,
         };
       })
     );
