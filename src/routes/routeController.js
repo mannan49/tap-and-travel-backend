@@ -1,5 +1,7 @@
+import axios from "axios";
 import EventTypes from "../constants/eventTypes.js";
 import Route from "./routeModel.js";
+import config from "../config/index.js";
 
 // Get all routes
 export const getAllRoutes = async (req, res) => {
@@ -94,5 +96,64 @@ export const deleteRoute = async (req, res) => {
     res.status(200).json({ message: "Route deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const placeSearchController = async (req, res, next) => {
+  const { query } = req.query;
+
+  if (!query) {
+    return res.status(400).json({ error: "Query parameter is required" });
+  }
+
+  const baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+  const aggregatedResults = [];
+
+  try {
+    let pageToken = null;
+    let attempts = 0;
+    let status = "OK";
+
+    do {
+      const params = {
+        query,
+        key: config.GOOGLE_MAPS_API_KEY,
+      };
+
+      if (pageToken) {
+        params.pagetoken = pageToken;
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // wait for token to activate
+      }
+
+      const response = await axios.get(baseUrl, { params });
+
+      if (
+        response.data.status !== "OK" &&
+        response.data.status !== "ZERO_RESULTS"
+      ) {
+        return res.status(500).json({
+          error: "Google Maps API Error",
+          status: response.data.status,
+        });
+      }
+
+      const { results, next_page_token } = response.data;
+
+      aggregatedResults.push(...results);
+      pageToken = next_page_token;
+      status = response.data.status;
+
+      attempts++;
+    } while (pageToken && attempts < 3);
+
+    res.json({
+      // add query key here
+      totalCount: aggregatedResults.length,
+      status,
+      results: aggregatedResults,
+    });
+  } catch (err) {
+    console.error("Google Places API Error:", err.message);
+    next(err);
   }
 };

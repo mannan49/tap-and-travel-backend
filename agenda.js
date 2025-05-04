@@ -18,7 +18,7 @@ agenda.define("sendBusDepartureNotification", async (job) => {
   const user = await User.findById(userId);
   const bus = await Bus.findById(busId);
 
-//   format departure time in formar 9:00 PM or AM
+  //   format departure time in formar 9:00 PM or AM
 
   if (user?.fcmToken && bus) {
     const formattedTime = moment(bus?.departureTime, "HH:mm").format("h:mm A");
@@ -27,6 +27,16 @@ agenda.define("sendBusDepartureNotification", async (job) => {
       "Bus Departure Reminder",
       `Your bus from ${bus.route.startCity} to ${bus.route.endCity} departs at ${formattedTime}. Be ready!`
     );
+  }
+});
+
+agenda.define("sendRouteStopNotification", async (job) => {
+  const { fcmToken, title, body } = job.attrs.data;
+
+  try {
+    await sendPushNotification(fcmToken, title, body);
+  } catch (err) {
+    console.error("Failed to send stop notification:", err);
   }
 });
 

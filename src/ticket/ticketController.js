@@ -3,7 +3,7 @@ import Bus from "../bus/busModel.js";
 import User from "../auth/user/userModel.js";
 import Admin from "../auth/admin/adminModel.js";
 import { sendPushNotification } from "../helpers/notificationHelper.js";
-import { scheduleNotification } from "../helpers/scheduler.js";
+import { scheduleNotification, scheduleRouteStopNotifications } from "../helpers/scheduler.js";
 
 const notifyUserOnBooking = async (userId, bus) => {
   const user = await User.findById(userId);
@@ -13,6 +13,24 @@ const notifyUserOnBooking = async (userId, bus) => {
       "Booking Confirmed",
       `Your seat for ${bus?.route?.startCity} to ${bus?.route?.endCity} is booked.`
     );
+  }
+};
+
+export const scheduleRouteNotifications = async (req, res) => {
+  const { userId, busId, currentLocation, route } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    const bus = await Bus.findById(busId);
+    if (!user || !user.fcmToken || !bus) {
+      return res.status(404).json({ message: "User or bus not found" });
+    }
+
+    await scheduleRouteStopNotifications(user, bus, currentLocation, route);
+    return res.status(200).json({ message: "Stop notifications scheduled" });
+  } catch (err) {
+    console.error("Scheduling error:", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -82,7 +100,7 @@ export const generateTickets = async (req, res, next) => {
     }
     res.locals.logEvent = {
       eventName: "TicketBooked",
-      payload: tickets, 
+      payload: tickets,
     };
     return res.status(201).json({ tickets: createdTickets });
   } catch (err) {
@@ -159,14 +177,24 @@ export const getTicketInformation = async (req, res, next) => {
     const ticketInformation = await Promise.all(
       tickets.map(async (ticket) => {
         const [user, admin, bus] = await Promise.all([
-          User.findById(ticket.userId),
-          Admin.findById(ticket.adminId),
-          Bus.findById(ticket.busId),
+          User.findById(ticket?.userId),
+          Admin.findById(ticket?.adminId),
+          Bus.findById(ticket?.busId),
         ]);
 
         if (!user || !admin || !bus) {
+          console.log("Missing data for ticket:", {
+            ticketId: ticket._id,
+            userFound: !!user,
+            adminFound: !!admin,
+            busFound: !!bus,
+          });
           throw new Error("Missing related information for ticket.");
         }
+
+        // if (!user || !admin || !bus) {
+        //   throw new Error("Missing related information for ticket.");
+        // }
 
         const seatDetails = bus.seats.find(
           (seat) => seat.seatNumber === ticket.seatNumber
