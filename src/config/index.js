@@ -11,7 +11,8 @@ const config = {
   AUTH_PASSWORD: process.env.AUTH_PASSWORD,
   OTP_EXPIRATION: process.env.OTP_EXPIRATION,
   STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY
 };
 
 export default config;

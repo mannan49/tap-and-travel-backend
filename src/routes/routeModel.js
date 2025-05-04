@@ -20,11 +20,34 @@ const RouteSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
+      formattedAddress: {
+        type: String,
+      },
+      placeId: {
+        type: String,
+      },
+      geometry: {
+        location: {
+          lat: Number,
+          lng: Number,
+        },
+        viewport: {
+          northeast: {
+            lat: Number,
+            lng: Number,
+          },
+          southwest: {
+            lat: Number,
+            lng: Number,
+          },
+        },
+      },
       locationLink: {
         type: String,
       },
       duration: {
         type: Number,
+        default: 0,
       },
     },
   ],
