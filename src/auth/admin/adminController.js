@@ -94,13 +94,13 @@ export const loginAdmin = async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { sub: admin._id, role: admin.role, name: admin.name },
+      { sub: admin._id, role: admin?.role, name: admin?.name },
       config.JWT_SECRET,
       { expiresIn: "7d" }
     );
     const decodedToken = jwtDecode(token);
     return res.status(200).json({
-      message: `Welome ${decodedToken.name.toUpperCase()} to dashboard!`,
+      message: `Welome ${decodedToken?.name.toUpperCase()} to dashboard!`,
       token,
     });
   } catch (err) {

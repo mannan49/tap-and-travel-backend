@@ -4,6 +4,8 @@ import BusEntity from "../busEntity/busEntityModel.js";
 import Route from "../routes/routeModel.js";
 import Bus from "./busModel.js";
 import EventTypes from "../constants/eventTypes.js";
+import { calculateEndDate } from "../helpers/calculateEndDate.js";
+import moment from "moment";
 
 function generateComplexSeatNumber(baseNumber) {
   const timestampPart = Date.now().toString().slice(-8); // Last 8 digits of the timestamp
@@ -59,18 +61,21 @@ export const addBus = async (req, res) => {
     };
 
     const seats = createSeats(busCapacity);
+    const endDate = calculateEndDate(date, arrivalTime);
 
     const bus = new Bus({
       busEntityId,
       adminId,
-      adminName: admin.name,
+      adminName: admin?.name,
       driverId,
       routeId,
       route,
       departureTime,
       arrivalTime,
       date,
+      endDate,
       busCapacity,
+      status: "scheduled",
       busDetails: busEntity,
       seats,
       fare,
@@ -112,6 +117,45 @@ export const getBuses = async (req, res) => {
   } catch (error) {
     console.error("Error retrieving buses:", error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Get Future Buses
+
+export const getFutureBuses = async (req, res, next) => {
+  try {
+    const buses = await Bus.find();
+    const validBuses = buses.filter((bus) => {
+      const now = moment.utc();
+      const busDate = moment.utc(bus.date).startOf("day");
+      const today = now.clone().startOf("day");
+
+      if (busDate.isAfter(today)) {
+        return true;
+      } else if (busDate.isSame(today)) {
+        const arrivalDateTime = moment.utc(
+          `${moment.utc(bus.date).format("YYYY-MM-DD")} ${bus.arrivalTime}`,
+          "YYYY-MM-DD HH:mm"
+        );
+
+        return now.isBefore(arrivalDateTime);
+      }
+
+      return false;
+    });
+
+    const busesWithAvailableSeats = validBuses.map((bus) => {
+      const availableSeats = bus.seats.filter((seat) => !seat.booked).length;
+
+      return {
+        ...bus._doc,
+        availableSeats,
+      };
+    });
+
+    res.status(200).json(busesWithAvailableSeats);
+  } catch (error) {
+    return next({ status: 500, message: error.message });
   }
 };
 
@@ -314,5 +358,35 @@ export const getBusesOnSearchFilters = async (req, res) => {
       message: "Error fetching filtered buses",
       error: error.message,
     });
+  }
+};
+
+export const updateBusStatus = async (req, res) => {
+  try {
+    const { busId, status } = req.body;
+
+    if (!busId || !status) {
+      return res
+        .status(400)
+        .json({ message: "busId and status are required." });
+    }
+
+    const updatedBus = await Bus.findByIdAndUpdate(
+      busId,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedBus) {
+      return res.status(404).json({ message: "Bus not found." });
+    }
+
+    return res.status(200).json({
+      message: "Bus status updated successfully.",
+      bus: updatedBus,
+    });
+  } catch (error) {
+    console.error("Error updating bus status:", error);
+    return res.status(500).json({ message: "Internal server error." });
   }
 };

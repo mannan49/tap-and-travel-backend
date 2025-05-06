@@ -91,15 +91,12 @@ export const addDriver = [
           .json({ message: "A driver with this email already exists" });
       }
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
       // Create a new driver
       const newDriver = new Admin({
         name,
         email,
         gender,
-        password: hashedPassword,
+        password,
         dob,
         phoneNumber,
         cnicNumber,
@@ -184,11 +181,6 @@ export const updateDriver = async (req, res, next) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-
-    if (updateData.password) {
-      // Hash the new password if provided
-      updateData.password = await bcrypt.hash(updateData.password, 10);
-    }
 
     const updatedDriver = await Admin.findByIdAndUpdate(id, updateData, {
       new: true,

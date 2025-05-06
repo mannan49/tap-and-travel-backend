@@ -149,7 +149,6 @@ export const getTicketInformation = async (req, res, next) => {
   try {
     let userIdToFetch = userId;
 
-    // If RFIDCardNumber is provided, fetch the userId using it
     if (RFIDCardNumber) {
       const user = await User.findOne({ RFIDCardNumber });
       if (!user) {
@@ -158,13 +157,19 @@ export const getTicketInformation = async (req, res, next) => {
           .json({ message: "No user found with the provided RFIDCardNumber." });
       }
       userIdToFetch = user._id;
+
+      const updateQuery = { userId: userIdToFetch };
+      if (busId) {
+        updateQuery.busId = busId;
+      }
+
+      await Ticket.updateMany(updateQuery, { status: "scanned" });
     }
 
     if (!userIdToFetch) {
       return res.status(400).json({ message: "UserId is required." });
     }
 
-    // Build ticket query dynamically
     const ticketQuery = { userId: userIdToFetch };
     if (busId) {
       ticketQuery.busId = busId;
@@ -180,23 +185,25 @@ export const getTicketInformation = async (req, res, next) => {
     const ticketInformation = await Promise.all(
       tickets.map(async (ticket) => {
         const [user, admin, bus] = await Promise.all([
-          User.findById(ticket?.userId),
-          Admin.findById(ticket?.adminId),
-          Bus.findById(ticket?.busId),
+          User.findById(ticket.userId),
+          Admin.findById(ticket.adminId),
+          Bus.findById(ticket.busId),
         ]);
 
-        if (!user && !admin && !bus) {
-          throw new Error("Missing related information for ticket.");
-        }
+        // If bus is missing, skip this ticket
+        if (!bus) return null;
 
-        const seatDetails = bus.seats.find(
-          (seat) => seat.seatNumber === ticket.seatNumber
+        const seatDetails = bus?.seats?.find(
+          (seat) => seat?.seatNumber === ticket?.seatNumber
         );
+
+        // If seatDetails are missing, skip this ticket
+        if (!seatDetails) return null;
 
         return {
           _id: ticket?._id,
           userId: user?._id,
-          busId: bus?._id,
+          busId: bus._id,
           adminId: admin?._id,
           user: user?.name,
           phoneNumber: user?.phoneNumber,
@@ -208,13 +215,17 @@ export const getTicketInformation = async (req, res, next) => {
           arrivalTime: bus?.arrivalTime,
           busCapacity: bus?.capacity,
           seatNumber: ticket?.seatNumber,
-          seatDetails: seatDetails || null,
+          seatDetails,
           date: ticket?.travelDate,
+          ticketStatus: ticket?.status,
+          endDate: bus?.endDate,
+          busStatus: bus?.status,
         };
       })
     );
 
-    res.status(200).json(ticketInformation);
+    const validTickets = ticketInformation.filter((t) => t !== null);
+    res.status(200).json(validTickets);
   } catch (err) {
     next({ status: 500, message: err.message });
   }

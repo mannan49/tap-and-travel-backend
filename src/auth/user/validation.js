@@ -42,11 +42,9 @@ const passwordValidationRules = () => {
 const loginValidationRules = () => {
   return [
     body("email").isEmail().withMessage("Please provide a valid email address"),
-    body("password").notEmpty().withMessage("Password is required"),
-    body("RFIDCardNumber")
+    body("password").notEmpty().withMessage("Password is required")
       .if((value, { req }) => !req.body.email && !req.body.password)
       .notEmpty()
-      .withMessage("RFIDCardNumber is required when logging in with RFID"),
   ];
 };
 

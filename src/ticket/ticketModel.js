@@ -35,7 +35,7 @@ const TicketSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["booked", "cancelled"],
+    enum: ["booked", "cancelled", "scanned"],
     default: "booked",
   },
   ticketId: {
