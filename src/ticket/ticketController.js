@@ -7,6 +7,7 @@ import {
   scheduleNotification,
   scheduleRouteStopNotifications,
 } from "../helpers/scheduler.js";
+import moment from "moment";
 
 const notifyUserOnBooking = async (userId, bus) => {
   const user = await User.findById(userId);
@@ -225,7 +226,19 @@ export const getTicketInformation = async (req, res, next) => {
     );
 
     const validTickets = ticketInformation.filter((t) => t !== null);
-    res.status(200).json(validTickets);
+    const now = moment.utc();
+    const active = validTickets
+      .filter((ticket) => moment.utc(ticket.date).isAfter(now))
+      .sort((a, b) => moment.utc(b.date).diff(moment.utc(a.date)));
+
+    const past = validTickets
+      .filter((ticket) => moment.utc(ticket.date).isSameOrBefore(now))
+      .sort((a, b) => moment.utc(b.date).diff(moment.utc(a.date)));
+
+    res.status(200).json({
+      active,
+      past,
+    });
   } catch (err) {
     next({ status: 500, message: err.message });
   }

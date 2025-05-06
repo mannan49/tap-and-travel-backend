@@ -61,6 +61,10 @@ export const addBus = async (req, res) => {
     };
 
     const seats = createSeats(busCapacity);
+    const departureDateTime = moment(
+      `${date} ${departureTime}`,
+      "YYYY-MM-DD HH:mm"
+    ).toDate();
     const endDate = calculateEndDate(date, arrivalTime);
 
     const bus = new Bus({
@@ -72,7 +76,7 @@ export const addBus = async (req, res) => {
       route,
       departureTime,
       arrivalTime,
-      date,
+      date: departureDateTime,
       endDate,
       busCapacity,
       status: "scheduled",
@@ -125,23 +129,12 @@ export const getBuses = async (req, res) => {
 export const getFutureBuses = async (req, res, next) => {
   try {
     const buses = await Bus.find();
+
+    const now = moment.utc(); // current UTC time
+
     const validBuses = buses.filter((bus) => {
-      const now = moment.utc();
-      const busDate = moment.utc(bus.date).startOf("day");
-      const today = now.clone().startOf("day");
-
-      if (busDate.isAfter(today)) {
-        return true;
-      } else if (busDate.isSame(today)) {
-        const arrivalDateTime = moment.utc(
-          `${moment.utc(bus.date).format("YYYY-MM-DD")} ${bus.arrivalTime}`,
-          "YYYY-MM-DD HH:mm"
-        );
-
-        return now.isBefore(arrivalDateTime);
-      }
-
-      return false;
+      const departureDateTime = moment.utc(bus.date); // full departure datetime in UTC
+      return departureDateTime.isAfter(now); // only keep buses that haven't departed yet
     });
 
     const busesWithAvailableSeats = validBuses.map((bus) => {
