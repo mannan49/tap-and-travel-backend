@@ -146,6 +146,7 @@ export const cancelTicket = async (req, res, next) => {
 export const getTicketInformation = async (req, res, next) => {
   const { RFIDCardNumber, busId } = req.body;
   let userId = req.params.userId || req.body.userId;
+  const { checkUptoEndDate } = req.query;
 
   try {
     let userIdToFetch = userId;
@@ -227,18 +228,48 @@ export const getTicketInformation = async (req, res, next) => {
 
     const validTickets = ticketInformation.filter((t) => t !== null);
     const now = moment.utc();
+
+    const checkUptoEndDate = req.query.checkUptoEndDate === "true"; // Ensure it's boolean
+
     const active = validTickets
-      .filter((ticket) => moment.utc(ticket.date).isAfter(now))
-      .sort((a, b) => moment.utc(b.date).diff(moment.utc(a.date)));
+      .filter((ticket) => {
+        if (checkUptoEndDate) {
+          if (!ticket.endDate) return false;
+          return moment.utc(ticket.endDate).isAfter(now);
+        } else {
+          return moment.utc(ticket.date).isAfter(now);
+        }
+      })
+      .sort((a, b) => {
+        const dateA = checkUptoEndDate
+          ? moment.utc(a.endDate)
+          : moment.utc(a.date);
+        const dateB = checkUptoEndDate
+          ? moment.utc(b.endDate)
+          : moment.utc(b.date);
+        return dateB.diff(dateA);
+      });
 
     const past = validTickets
-      .filter((ticket) => moment.utc(ticket.date).isSameOrBefore(now))
-      .sort((a, b) => moment.utc(b.date).diff(moment.utc(a.date)));
+      .filter((ticket) => {
+        if (checkUptoEndDate) {
+          if (!ticket.endDate) return false; // Exclude if no endDate
+          return moment.utc(ticket.endDate).isSameOrBefore(now);
+        } else {
+          return moment.utc(ticket.date).isSameOrBefore(now);
+        }
+      })
+      .sort((a, b) => {
+        const dateA = checkUptoEndDate
+          ? moment.utc(a.endDate)
+          : moment.utc(a.date);
+        const dateB = checkUptoEndDate
+          ? moment.utc(b.endDate)
+          : moment.utc(b.date);
+        return dateB.diff(dateA);
+      });
 
-    res.status(200).json({
-      active,
-      past,
-    });
+    res.status(200).json({ active, past });
   } catch (err) {
     next({ status: 500, message: err.message });
   }
