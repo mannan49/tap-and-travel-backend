@@ -187,18 +187,32 @@ export const deleteBus = async (req, res) => {
 
 export const updateBus = async (req, res) => {
   const { id } = req.params;
-  const updates = req.body; // Destructure the entire body to allow flexible updates
+  const updates = { ...req.body };
 
   try {
-    // Validate the id
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid bus ID" });
     }
+    const hasDateOrTimeChanged =
+      updates.date || updates.departureTime || updates.arrivalTime;
 
-    // Find the bus and update only the fields provided in the request
+    if (hasDateOrTimeChanged) {
+      const baseDate = updates.date || (await Bus.findById(id)).date;
+      const departureTime =
+        updates.departureTime || (await Bus.findById(id)).departureTime;
+      const arrivalTime =
+        updates.arrivalTime || (await Bus.findById(id)).arrivalTime;
+
+      updates.date = moment(
+        `${baseDate.split("T")[0]} ${departureTime}`,
+        "YYYY-MM-DD HH:mm"
+      ).toDate();
+      updates.endDate = calculateEndDate(baseDate, arrivalTime);
+    }
+
     const updatedBus = await Bus.findByIdAndUpdate(id, updates, {
-      new: true, // Return the updated document
-      runValidators: true, // Run schema validators for updates
+      new: true,
+      runValidators: true,
     });
 
     if (!updatedBus) {

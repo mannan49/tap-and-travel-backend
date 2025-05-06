@@ -44,7 +44,11 @@ export const createPaymentIntent = async (req, res) => {
 
     await paymentRecord.save();
 
-    res.status(200).json({ clientSecret: paymentIntent.client_secret });
+    res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
+      paymentId: paymentIntent.id,
+      userId: userId,
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
