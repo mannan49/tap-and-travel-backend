@@ -320,11 +320,13 @@ const deleteRfidCardNumber = async (req, res, next) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    // Find the user by email and set the RFIDCardNumber to an empty string
     const user = await User.findOneAndUpdate(
       { email },
-      { RFIDCardNumber: "" },
-      { new: true } // Return the updated user
+      {
+        RFIDCardNumber: "",
+        RFIDCardStatus: "pending"
+      },
+      { new: true } 
     );
 
     if (!user) {
