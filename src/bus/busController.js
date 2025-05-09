@@ -61,10 +61,11 @@ export const addBus = async (req, res) => {
     };
 
     const seats = createSeats(busCapacity);
-    const departureDateTime = moment(
+    const departureDateTimeLocal = moment(
       `${date} ${departureTime}`,
       "YYYY-MM-DD HH:mm"
-    ).toDate();
+    );
+    const departureDateTime = departureDateTimeLocal.utc().toDate();
     const endDate = calculateEndDate(date, arrivalTime);
 
     const bus = new Bus({
