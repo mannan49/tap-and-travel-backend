@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema({
     address: String,
   },
   RFIDCardStatus: {
-    type: "String",
+    type: String,
     default: "pending",
     enum: ["pending", "booked", "delivered"],
   },

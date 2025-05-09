@@ -260,14 +260,32 @@ const loginUser = async (req, res, next) => {
 
 const getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find();
+    const users = await User.find().select(
+      "name email RFIDCardStatus RFIDCardNumber phoneNumber address"
+    );
+
+    const filteredUsers = users.map((user) => ({
+      name: user?.name || "",
+      email: user?.email || "",
+      RFIDCardStatus: user?.RFIDCardStatus || "",
+      RFIDCardNumber: user?.RFIDCardNumber || "",
+      phoneNumber: user?.phoneNumber || "",
+      address: {
+        address: user?.address?.address || "",
+        city: user?.address?.city || "",
+        province: user?.address?.province || "",
+        postalCode: user?.address?.postalCode || "",
+      },
+    }));
+
     return res
       .status(200)
-      .json({ message: "Users fetched successfully", users });
+      .json({ message: "Users fetched successfully", users: filteredUsers });
   } catch (err) {
     return next({ status: 500, message: "Error fetching users" });
   }
 };
+
 
 const addRfidCardNumber = async (req, res, next) => {
   try {
