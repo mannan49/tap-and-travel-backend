@@ -5,7 +5,16 @@ const userValidationRules = () => {
     body("name")
       .isLength({ min: 3 })
       .withMessage("Name must be at least 3 characters long"),
-    body("email").isEmail().withMessage("Please provide a valid email address"),
+      body("email")
+      .isEmail()
+      .withMessage("Please provide a valid email address")
+      .custom((value) => {
+        const allowedPattern = /^[a-zA-Z0-9@.]+$/;
+        if (!allowedPattern.test(value)) {
+          throw new Error("Email should not contain special characters except '@' and '.'");
+        }
+        return true;
+      }),    
     body("password")
       .isLength({ min: 8 })
       .withMessage("Password must be at least 8 characters long")

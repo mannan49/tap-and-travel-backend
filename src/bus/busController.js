@@ -61,10 +61,10 @@ export const addBus = async (req, res) => {
     };
 
     const seats = createSeats(busCapacity);
-    const departureDateTime = moment(
-      `${date} ${departureTime}`,
-      "YYYY-MM-DD HH:mm"
-    ).toDate();
+    const departureDateTime = moment
+      .utc(`${date} ${departureTime}`, "YYYY-MM-DD HH:mm")
+      .toISOString();
+
     const endDate = calculateEndDate(date, departureTime, arrivalTime);
 
     const bus = new Bus({
@@ -203,11 +203,11 @@ export const updateBus = async (req, res) => {
       const arrivalTime =
         updates.arrivalTime || (await Bus.findById(id)).arrivalTime;
 
-      updates.date = moment(
-        `${baseDate.split("T")[0]} ${departureTime}`,
-        "YYYY-MM-DD HH:mm"
-      ).toDate();
-      updates.endDate = calculateEndDate(baseDate, arrivalTime);
+      updates.date = moment
+        .utc(`${baseDate.split("T")[0]} ${departureTime}`, "YYYY-MM-DD HH:mm")
+        .toISOString();
+
+      updates.endDate = calculateEndDate(baseDate, departureTime, arrivalTime);
     }
 
     const updatedBus = await Bus.findByIdAndUpdate(id, updates, {
