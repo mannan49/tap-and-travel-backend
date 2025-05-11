@@ -39,6 +39,9 @@ const BusEntitySchema = new mongoose.Schema(
       default: "executive",
       enum: ["economy", "executive", "business"],
     },
+    imageSrc: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

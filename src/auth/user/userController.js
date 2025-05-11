@@ -226,11 +226,15 @@ const loginUser = async (req, res, next) => {
 
     const user = await User.findOne({ email });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return next({ status: 401, message: "Invalid credentials" });
-    }
     if (!user) {
+      return next({
+        status: 401,
+        message: "Account does not exist. Please Signup to continue",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user?.password);
+    if (!isMatch) {
       return next({ status: 401, message: "Invalid credentials" });
     }
     if (!user.verified) {
@@ -285,7 +289,6 @@ const getAllUsers = async (req, res, next) => {
     return next({ status: 500, message: "Error fetching users" });
   }
 };
-
 
 const addRfidCardNumber = async (req, res, next) => {
   try {
@@ -342,9 +345,9 @@ const deleteRfidCardNumber = async (req, res, next) => {
       { email },
       {
         RFIDCardNumber: "",
-        RFIDCardStatus: "pending"
+        RFIDCardStatus: "pending",
       },
-      { new: true } 
+      { new: true }
     );
 
     if (!user) {

@@ -4,6 +4,7 @@ import Admin from "../auth/admin/adminModel.js";
 import EventTypes from "../constants/eventTypes.js";
 
 // Create a new BusEntity
+
 export const createBusEntity = async (req, res) => {
   try {
     const {
@@ -17,6 +18,9 @@ export const createBusEntity = async (req, res) => {
       standard,
     } = req.body;
 
+    const randomImageNumber = Math.floor(Math.random() * 5) + 1;
+    const imageSrc = `https://www.freeiconspng.com/uploads/bus-png-${randomImageNumber}.png`;
+
     const newBusEntity = new BusEntity({
       adminId,
       busNumber,
@@ -26,6 +30,7 @@ export const createBusEntity = async (req, res) => {
       ac,
       fuelType,
       standard,
+      imageSrc,
     });
 
     await newBusEntity.save();
@@ -48,7 +53,6 @@ export const getBusEntitiesByAdminId = async (req, res) => {
   const { adminId } = req.query;
 
   try {
-    // Explicitly find by adminId
     const buses = await BusEntity.find({ adminId });
 
     res.status(200).json(buses);

@@ -26,7 +26,7 @@ const busValidationRules = () => {
         return true;
       }),
 
-    // Validate departureTime separately
+    // // Validate departureTime separately
     body("departureTime").custom((departureTimeValue, { req }) => {
       const { date } = req.body;
 
@@ -72,7 +72,6 @@ const busValidationRules = () => {
       .optional()
       .isString()
       .withMessage("Promo code must be a string"),
-
   ];
 };
 

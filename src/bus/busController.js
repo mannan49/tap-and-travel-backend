@@ -8,8 +8,8 @@ import { calculateEndDate } from "../helpers/calculateEndDate.js";
 import moment from "moment";
 
 function generateComplexSeatNumber(baseNumber) {
-  const timestampPart = Date.now().toString().slice(-8); // Last 8 digits of the timestamp
-  const randomPart = Math.floor(1000 + Math.random() * 9000); // Random 4-digit number
+  const timestampPart = Date.now().toString().slice(-8);
+  const randomPart = Math.floor(1000 + Math.random() * 9000);
   return `SEAT-${baseNumber + 1}-${timestampPart}-${randomPart}`;
 }
 
@@ -65,7 +65,7 @@ export const addBus = async (req, res) => {
       `${date} ${departureTime}`,
       "YYYY-MM-DD HH:mm"
     ).toDate();
-    const endDate = calculateEndDate(date, arrivalTime);
+    const endDate = calculateEndDate(date, departureTime, arrivalTime);
 
     const bus = new Bus({
       busEntityId,
