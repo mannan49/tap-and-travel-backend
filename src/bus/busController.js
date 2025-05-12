@@ -61,9 +61,13 @@ export const addBus = async (req, res) => {
     };
 
     const seats = createSeats(busCapacity);
-    const departureDateTime = moment
-      .utc(`${date} ${departureTime}`, "YYYY-MM-DD HH:mm")
-      .toISOString();
+
+    const departureDateTime = moment(
+      `${date} ${departureTime}`,
+      "YYYY-MM-DD HH:mm"
+    )
+      .utc()
+      .toDate();
 
     const endDate = calculateEndDate(date, departureTime, arrivalTime);
 
@@ -193,21 +197,38 @@ export const updateBus = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid bus ID" });
     }
+
     const hasDateOrTimeChanged =
       updates.date || updates.departureTime || updates.arrivalTime;
 
     if (hasDateOrTimeChanged) {
-      const baseDate = updates.date || (await Bus.findById(id)).date;
-      const departureTime =
-        updates.departureTime || (await Bus.findById(id)).departureTime;
-      const arrivalTime =
-        updates.arrivalTime || (await Bus.findById(id)).arrivalTime;
+      const bus = await Bus.findById(id);
+      if (!bus) return res.status(404).json({ message: "Bus not found" });
 
-      updates.date = moment
-        .utc(`${baseDate.split("T")[0]} ${departureTime}`, "YYYY-MM-DD HH:mm")
-        .toISOString();
+      // If user updated the full local date string, use it
+      // Otherwise reconstruct it using the bus.date in Pakistan time
+      let baseDateString;
+      if (updates.date) {
+        // If user passed a full dateTime, extract local date
+        baseDateString = moment(updates.date).utcOffset(5).format("YYYY-MM-DD");
+      } else {
+        baseDateString = moment(bus.date).utcOffset(5).format("YYYY-MM-DD");
+      }
 
-      updates.endDate = calculateEndDate(baseDate, departureTime, arrivalTime);
+      const departureTime = updates.departureTime || bus.departureTime;
+      const arrivalTime = updates.arrivalTime || bus.arrivalTime;
+
+      // Recreate new UTC datetime from local date and departureTime
+      const departureDateTime = moment
+        .utc(`${baseDateString} ${departureTime}`, "YYYY-MM-DD HH:mm")
+        .toDate();
+
+      updates.date = departureDateTime;
+      updates.endDate = calculateEndDate(
+        baseDateString,
+        departureTime,
+        arrivalTime
+      );
     }
 
     const updatedBus = await Bus.findByIdAndUpdate(id, updates, {
@@ -218,6 +239,11 @@ export const updateBus = async (req, res) => {
     if (!updatedBus) {
       return res.status(404).json({ message: "Bus not found" });
     }
+
+    res.locals.logEvent = {
+      eventName: EventTypes.ADMIN_UPDATE_BUS,
+      payload: updatedBus,
+    };
 
     res.status(200).json({
       message: "Bus updated successfully",

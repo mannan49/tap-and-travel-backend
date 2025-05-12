@@ -9,6 +9,7 @@ const EventTypes = {
   // Admin Events
   ADMIN_ADD_ROUTE: "AdminAddRoute",
   ADMIN_ADD_BUS: "AdminAddBus",
+  ADMIN_UPDATE_BUS: "AdminUpdateBus",
   ADMIN_ADD_DRIVER: "AdminAddDriver",
   ADMIN_UPDATE_DRIVER: "AdminUpdateDriver",
   ADMIN_ADD_VEHICLE: "AdminAddVehicle",
