@@ -5,7 +5,7 @@ import Route from "../routes/routeModel.js";
 import Bus from "./busModel.js";
 import EventTypes from "../constants/eventTypes.js";
 import { calculateEndDate } from "../helpers/calculateEndDate.js";
-import moment from "moment";
+import moment from "moment-timezone";
 
 function generateComplexSeatNumber(baseNumber) {
   const timestampPart = Date.now().toString().slice(-8);
@@ -62,10 +62,8 @@ export const addBus = async (req, res) => {
 
     const seats = createSeats(busCapacity);
 
-    const departureDateTime = moment(
-      `${date} ${departureTime}`,
-      "YYYY-MM-DD HH:mm"
-    )
+    const departureDateTime = moment
+      .tz(`${date} ${departureTime}`, "YYYY-MM-DD HH:mm", "Asia/Karachi")
       .utc()
       .toDate();
 
@@ -205,11 +203,8 @@ export const updateBus = async (req, res) => {
       const bus = await Bus.findById(id);
       if (!bus) return res.status(404).json({ message: "Bus not found" });
 
-      // If user updated the full local date string, use it
-      // Otherwise reconstruct it using the bus.date in Pakistan time
       let baseDateString;
       if (updates.date) {
-        // If user passed a full dateTime, extract local date
         baseDateString = moment(updates.date).utcOffset(5).format("YYYY-MM-DD");
       } else {
         baseDateString = moment(bus.date).utcOffset(5).format("YYYY-MM-DD");
@@ -218,9 +213,13 @@ export const updateBus = async (req, res) => {
       const departureTime = updates.departureTime || bus.departureTime;
       const arrivalTime = updates.arrivalTime || bus.arrivalTime;
 
-      // Recreate new UTC datetime from local date and departureTime
       const departureDateTime = moment
-        .utc(`${baseDateString} ${departureTime}`, "YYYY-MM-DD HH:mm")
+        .tz(
+          `${baseDateString} ${departureTime}`,
+          "YYYY-MM-DD HH:mm",
+          "Asia/Karachi"
+        )
+        .utc()
         .toDate();
 
       updates.date = departureDateTime;
