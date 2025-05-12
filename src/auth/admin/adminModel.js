@@ -31,7 +31,7 @@ const AdminSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "driver"],
+      enum: ["admin", "driver", "superadmin"],
       default: "admin",
     },
     cnicNumber: {
