@@ -15,11 +15,21 @@ export const logEvent = async (req, res, next) => {
   } = req;
   const userAgent = req.headers["user-agent"];
   const ip = req.ip;
-  const token = req.headers.authorization?.split(" ")[1];
   let userId = "";
+  let token = req.headers.authorization?.split(" ")[1];
+
   if (token) {
-    const decoded = jwt.verify(token, config.JWT_SECRET);
-    userId = decoded?.sub || "";
+    try {
+      const decoded = jwt.verify(token, config.JWT_SECRET);
+      userId = decoded?.sub || "";
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        console.warn("JWT expired while logging event.");
+      } else {
+        console.warn("Invalid JWT token while logging event.");
+      }
+      token = "";
+    }
   }
 
   res.on("finish", async () => {
